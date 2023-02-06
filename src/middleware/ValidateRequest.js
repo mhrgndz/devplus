@@ -6,7 +6,7 @@ class ValidateRequest {
         this.PathObject = PathObject;
     }
     async validateRequest(req) {
-        const verifyPathResult = await this.verifyFindPathObject(req.path);
+        const verifyPathResult = await this.verifyPathObject(req.path);
 
         if (verifyPathResult) {
             return true;
@@ -21,7 +21,7 @@ class ValidateRequest {
 
         return false;
     }
-    async verifyFindPathObject(requestPath) {
+    async verifyPathObject(requestPath) {
         const findPath = this.PathObject.find(path => path === requestPath);
 
         return findPath;

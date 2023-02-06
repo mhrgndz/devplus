@@ -20,11 +20,11 @@ app.get('/api/*', async (req, res, next) => {
     else{
         next();
     } 
-  }, (req, res, next) => {
+  }, (req, res) => {
     res.send(new ResponseObject({}, ResponseCodes.ERROR, ErrorCodes.INVALID_USER));
 });
   
-app.get('/api/*', async (req, res, next) => {
+app.get('/api/*', async (req, res) => {
     const reqHandler = new RequestHandler(req);
     res.send(await reqHandler.dispatch());
 });
