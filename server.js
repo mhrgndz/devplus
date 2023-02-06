@@ -6,14 +6,14 @@ import ErrorCodes from './src/objects/ErrorCodes.js';
 import ResponseCodes from './src/objects/ResponseCodes.js';
 import ResponseObject from './src/objects/ResponseObject.js';
 import RequestHandler from './src/RequestHandler.js';
-import Authentication from './src/middleware/Authentication.js';
+import ValidateRequest from './src/middleware/ValidateRequest.js';
 
 dotenv.config();
 const app = express();
-const Auth = new Authentication();
+const validate = new ValidateRequest();
 
 app.get('/api/*', async (req, res, next) => {
-    const validateResult = await Auth.validateRequest(req);
+    const validateResult = await validate.validateRequest(req);
     if (validateResult){
         next('route');
     } 
