@@ -1,5 +1,3 @@
-import db from './client/db.js';
-
 class RequestHandler {
 
     constructor(event) {
@@ -8,15 +6,13 @@ class RequestHandler {
 
     async dispatch() {
         try {
-            // const result = await db.query("select * from users");
 
-            // console.log(result.rows)
         } catch (error) {
             console.log(error);
         } finally {
 
         }
-        return "";
+        return "123";
     }
 }
 

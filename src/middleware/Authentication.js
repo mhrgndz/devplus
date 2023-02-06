@@ -5,25 +5,35 @@ class Authentication {
     constructor() {
         this.PathObject = PathObject;
     }
-    async verifyToken(accessToken, requestPath) {
-        const verifyPath = await this.findPathObject(requestPath);
+    async validateRequest(req) {
+        const verifyPathResult = await this.verifyFindPathObject(req.path);
 
-        if (verifyPath) {
+        if (verifyPathResult) {
             return true;
         }
 
-        const token = await db.query("select id from users where is_enabled = true and access_token=$1",[accessToken]);
+        const verifyTokenResult = await this.verifyToken(req);
 
-        if(token.rows.length) {
+        if (verifyTokenResult) {
+            return true;
+        }
+
+        return false;
+    }
+    async verifyFindPathObject(requestPath) {
+        const findPath = this.PathObject.find(path => path === requestPath);
+
+        return findPath;
+    }
+    async verifyToken(req) {
+        const token = req.headers['accesstoken'];
+        const tokenResult = await db.query("select id from users where is_enabled = true and access_token=$1",[token]);
+
+        if(tokenResult.rows.length) {
             return true;
         }
         
         return false;
-    }
-    async findPathObject(requestPath) {
-        const findPath = this.PathObject.find(path => path === requestPath);
-
-        return findPath;
     }
 }
 
