@@ -4,7 +4,6 @@ import Authentication from './Authentication.js';
 class ValidateRequest {
     constructor() {
         this.PathObject = PathObject;
-        this.Authentication = new Authentication;
     }
     async validateRequest(req) {
         const verifyPathResult = await this.verifyFindPathObject(req.path);
@@ -13,7 +12,8 @@ class ValidateRequest {
             return true;
         }
 
-        const verifyTokenResult = await this.Authentication.verifyToken(req);
+        const Aut = new Authentication();
+        const verifyTokenResult = await Aut.verifyToken(req);
 
         if (verifyTokenResult) {
             return true;
