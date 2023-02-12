@@ -8,11 +8,14 @@ import ResponseObject from './src/objects/ResponseObject.js';
 import RequestHandler from './src/RequestHandler.js';
 import ValidateRequest from './src/middleware/ValidateRequest.js';
 
-dotenv.config();
 const app = express();
 const validate = new ValidateRequest();
 
+app.use(express.json());
+dotenv.config();
+
 app.get('/api/*', async (req, res, next) => {
+    console.log(req.headers)
     const validateResult = await validate.validateRequest(req);
     if (validateResult){
         next('route');
