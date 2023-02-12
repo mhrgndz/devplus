@@ -5,6 +5,7 @@ const ErrorCodes = Object.freeze({
     INVALID_SMS_CODE: "INVALID_SMS_CODE",
     DISABLED_USER: "DISABLED_USER",
     INVALID_USER: "INVALID_USER",
+    INVALID_PASSWORD: "INVALID_PASSWORD",
 });
 
 export default ErrorCodes;

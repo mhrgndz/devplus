@@ -1,14 +1,15 @@
-import { v4 as uuidv4 } from "uuid";
 import db from "../client/db.js";
 import ResponseObject from "../objects/ResponseObject.js";
 import ResponseCodes from "../objects/ResponseCodes.js";
 import ErrorCodes from '../objects/ErrorCodes.js';
 import CryptoUtil from "../utils/CryptoUtil.js";
+import Uuidv4 from "../utils/Uuidv4Util.js";
 
 class UserHandler {
 
     constructor() {
         this.crypto = new CryptoUtil();
+        this.uuid = new Uuidv4();
     }
 
     async signin(body) {
@@ -17,9 +18,9 @@ class UserHandler {
             return new ResponseObject({}, ResponseCodes.ERROR, ErrorCodes.MISSING_PARAMETERS);
         }
 
-        const signinResult = await db.query('select id from users where is_enabled=true and mobile_phone=$1', [body.mobilePhone]);
+        const user = await this.getUser(body);
 
-        if (signinResult.rowCount) {
+        if (user.rowCount) {
             return new ResponseObject({}, ResponseCodes.ERROR, ErrorCodes.INVALID_USER);
         }
 
@@ -36,24 +37,39 @@ class UserHandler {
             return new ResponseObject({}, ResponseCodes.ERROR, ErrorCodes.MISSING_PARAMETERS);
         }
 
-        const loginResult = await db.query('select access_token,id from users where is_enabled=true and mobile_phone=$1 and password=$2', [body.mobilePhone, body.password]);
+        const user = await this.getUser(body);
 
-        if (!loginResult.rowCount) {
+        if (!user.rowCount) {
             return new ResponseObject({}, ResponseCodes.ERROR, ErrorCodes.INVALID_USER);
         }
 
-        const token = uuidv4();
+        const decryptPassword = await this.crypto.decrypt(user.rows[0].password, process.env.USER_PASSWORD_KEY);
 
-        await db.query('update users set access_token=$1 where id=$2', [token, loginResult.rows[0].id]);
+        if (decryptPassword !== body.password) {
+            return new ResponseObject({}, ResponseCodes.ERROR, ErrorCodes.INVALID_PASSWORD);
+        }
+
+        const token = await this.uuid.randomUuid();
+
+        await this.updateUser(token, user);
 
         return new ResponseObject({ accessToken:token }, ResponseCodes.OK);
     }
 
-    async insertUser(body, pw) {
-
-        const signinInsert = `INSERT INTO public.users(name, surname, email, mobile_phone, password)
+    async insertUser(body, encrytedPassword) {
+        const signinInsert = `insert into public.users(name, surname, email, mobile_phone, password)
             VALUES ($1, $2, $3, $4, $5)`;
-        await db.query(signinInsert, [body.name, body.surname, body.email, body.mobilePhone, pw]);
+        await db.query(signinInsert, [body.name, body.surname, body.email, body.mobilePhone, encrytedPassword]);
+    }
+
+    async updateUser(token, user) {
+        await db.query('update users set access_token=$1 where id=$2', [token, user.rows[0].id]);
+    }
+
+    async getUser(body) {
+        const user = await db.query('select * from users where is_enabled=true and mobile_phone=$1', [body.mobilePhone]);
+
+        return user;
     }
 }
 
