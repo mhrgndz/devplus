@@ -22,11 +22,11 @@ class RequestHandler {
         let result;
 
         try {
-            result = await this.funcMap[this.handler][this.func]();
+            result = await this.funcMap[this.handler][this.func](this.event.body);
         } catch (error) {
             console.log(error);
         } finally {
-
+            console.log(JSON.stringify(result));
         }
         return result;
     }

@@ -14,8 +14,7 @@ const validate = new ValidateRequest();
 app.use(express.json());
 dotenv.config();
 
-app.get('/api/*', async (req, res, next) => {
-    console.log(req.headers)
+app.post('/api/*', async (req, res, next) => {
     const validateResult = await validate.validateRequest(req);
     if (validateResult){
         next('route');
@@ -27,7 +26,7 @@ app.get('/api/*', async (req, res, next) => {
     res.send(new ResponseObject({}, ResponseCodes.ERROR, ErrorCodes.INVALID_USER));
 });
   
-app.get('/api/*', async (req, res) => {
+app.post('/api/*', async (req, res) => {
     const reqHandler = new RequestHandler(req);
     res.send(await reqHandler.dispatch());
 });

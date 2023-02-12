@@ -1,7 +1,7 @@
 const PathObject = 
 [
-    "/api/users/sigin", 
-    "/api/users/login"
+    "/api/user/signin", 
+    "/api/user/login"
 ];
 
 export default PathObject;
