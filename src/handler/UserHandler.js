@@ -3,7 +3,7 @@ import ResponseObject from "../objects/ResponseObject.js";
 import ResponseCodes from "../objects/ResponseCodes.js";
 import ErrorCodes from '../objects/ErrorCodes.js';
 import CryptoUtil from "../utils/CryptoUtil.js";
-import Uuidv4 from "../utils/UuidvUtil.js";
+import Uuidv4 from "../utils/UuidUtil.js";
 
 class UserHandler {
 
