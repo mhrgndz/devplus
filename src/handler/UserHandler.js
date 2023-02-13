@@ -57,16 +57,19 @@ class UserHandler {
     }
 
     async insertUser(body, encrytedPassword) {
+
         const signinInsert = `insert into public.users(name, surname, email, mobile_phone, password)
             VALUES ($1, $2, $3, $4, $5)`;
         await db.query(signinInsert, [body.name, body.surname, body.email, body.mobilePhone, encrytedPassword]);
     }
 
     async updateUser(token, user) {
+        
         await db.query('update users set access_token=$1 where id=$2', [token, user.rows[0].id]);
     }
 
     async getUser(body) {
+
         const user = await db.query('select * from users where is_enabled=true and mobile_phone=$1', [body.mobilePhone]);
 
         return user;
