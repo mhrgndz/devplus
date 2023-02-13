@@ -1,4 +1,4 @@
-const ErrorCodes = Object.freeze({
+const ErrorMessage = Object.freeze({
     MISSING_HEADERS: "MISSING_HEADERS",
     MISSING_PARAMETERS: "MISSING_PARAMETERS",
     INVALID_METHOD: "INVALID_METHOD",
@@ -6,6 +6,8 @@ const ErrorCodes = Object.freeze({
     DISABLED_USER: "DISABLED_USER",
     INVALID_USER: "INVALID_USER",
     INVALID_PASSWORD: "INVALID_PASSWORD",
+    PATH_VERIFY_ERROR: "PATH_VERIFY_ERROR",
+    INVALID_TOKEN: "INVALID_TOKEN",
 });
 
-export default ErrorCodes;
+export default ErrorMessage;

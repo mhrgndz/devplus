@@ -2,8 +2,6 @@
 
 import * as dotenv from 'dotenv';
 import express from 'express';
-import ErrorCodes from './src/objects/ErrorCodes.js';
-import ResponseCodes from './src/objects/ResponseCodes.js';
 import ResponseObject from './src/objects/ResponseObject.js';
 import RequestHandler from './src/RequestHandler.js';
 import ValidateRequest from './src/middleware/ValidateRequest.js';
@@ -14,16 +12,19 @@ const validate = new ValidateRequest();
 app.use(express.json());
 dotenv.config();
 
+let validateResult;
+
 app.post('/api/*', async (req, res, next) => {
-    const validateResult = await validate.validateRequest(req);
-    if (validateResult){
+    validateResult = await validate.validateRequest(req);
+
+    if (validateResult.statusCode === 200){
         next('route');
     } 
     else{
         next();
     } 
   }, (req, res) => {
-    res.send(new ResponseObject({}, ResponseCodes.ERROR, ErrorCodes.INVALID_USER));
+    res.send(new ResponseObject({}, validateResult.statusCode, validateResult.message));
 });
   
 app.post('/api/*', async (req, res) => {

@@ -1,9 +1,9 @@
-import db from "../client/db.js";
 import ResponseObject from "../objects/ResponseObject.js";
 import ResponseCodes from "../objects/ResponseCodes.js";
-import ErrorCodes from '../objects/ErrorCodes.js';
+import ErrorMessage from '../objects/ErrorMessage.js';
 import CryptoUtil from "../utils/CryptoUtil.js";
 import Uuidv4 from "../utils/UuidUtil.js";
+import db from "../client/db.js";
 
 class UserHandler {
 
@@ -15,13 +15,13 @@ class UserHandler {
     async signin(body) {
 
         if (!body.name || !body.surname || !body.email || !body.mobilePhone || !body.password) {
-            return new ResponseObject({}, ResponseCodes.ERROR, ErrorCodes.MISSING_PARAMETERS);
+            return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
         }
 
         const user = await this.getUser(body);
 
         if (user.rowCount) {
-            return new ResponseObject({}, ResponseCodes.ERROR, ErrorCodes.INVALID_USER);
+            return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.INVALID_USER);
         }
 
         const encrytedPassword = await this.crypto.encrypt(body.password, process.env.USER_PASSWORD_KEY);
@@ -34,19 +34,19 @@ class UserHandler {
     async login(body) {
 
         if (!body.mobilePhone || !body.password) {
-            return new ResponseObject({}, ResponseCodes.ERROR, ErrorCodes.MISSING_PARAMETERS);
+            return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
         }
 
         const user = await this.getUser(body);
 
         if (!user.rowCount) {
-            return new ResponseObject({}, ResponseCodes.ERROR, ErrorCodes.INVALID_USER);
+            return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.INVALID_USER);
         }
 
         const decryptPassword = await this.crypto.decrypt(user.rows[0].password, process.env.USER_PASSWORD_KEY);
 
         if (decryptPassword !== body.password) {
-            return new ResponseObject({}, ResponseCodes.ERROR, ErrorCodes.INVALID_PASSWORD);
+            return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.INVALID_PASSWORD);
         }
 
         const token = await this.uuid.randomUuid();

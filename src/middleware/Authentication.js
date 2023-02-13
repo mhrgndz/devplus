@@ -5,7 +5,7 @@ class Authentication {
         const token = req.headers['accesstoken'];
         const tokenResult = await db.query("select id from users where is_enabled = true and access_token=$1", [token]);
 
-        if(tokenResult.rows.length) {
+        if(tokenResult.rowCount) {
             return true;
         }
         
