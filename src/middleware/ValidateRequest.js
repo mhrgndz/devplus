@@ -12,7 +12,7 @@ class ValidateRequest {
         const verifyPathResult = await this.verifyPathObject(req.path);
 
         if (verifyPathResult) {
-            return new ResponseObject({}, ResponseCodes.OK_WRITTEN);
+            return new ResponseObject({}, ResponseCodes.OK);
         }
 
         const Aut = new Authentication();
@@ -22,12 +22,13 @@ class ValidateRequest {
             return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.INVALID_TOKEN);
         }
 
-        return new ResponseObject({}, ResponseCodes.OK_WRITTEN);
+        return new ResponseObject({}, ResponseCodes.OK);
     }
     async verifyPathObject(requestPath) {
-        const findPath = this.PathObject.find(path => path === requestPath);
+        const findPath = requestPath.split("/").filter(item => {return item !== ""});
+        const pathResult = this.PathObject.find(path => path === findPath[2]);
 
-        return findPath;
+        return pathResult;
     }
 }
 
