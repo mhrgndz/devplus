@@ -22,7 +22,7 @@ class VehicleHandler {
             return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
         }
 
-        const vehicleResult = await this.selectVehicleDetail(body);
+        const vehicleResult = await this.selectVehicle(body);
 
         return new ResponseObject(vehicleResult.rows, ResponseCodes.OK);
     }
@@ -33,28 +33,45 @@ class VehicleHandler {
             return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
         }
 
-        const updateResult = await this.updateVehicleDetail(body);
+        const updateResult = await this.updateVehicle(body);
 
         return new ResponseObject(updateResult.rows, ResponseCodes.OK);
     }
 
-    async insertVehicle(data) {
+    async delete(body) {
 
-        const vehicleInsert = `insert into public.vehicles(brand, model, note, user_id)
-            VALUES ($1, $2, $3, $4) returning*`;
-        return await db.query(vehicleInsert, [data.brand, data.model, data.note, data.userId]);
+        if (!body.vehicleId) {
+            return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
+        }
+
+        await this.deleteVehicle(body);
+
+        return new ResponseObject({}, ResponseCodes.OK);
     }
 
-    async selectVehicleDetail(data) {
+    async insertVehicle(data) {
+
+        const vehicleInsert = `insert into public.vehicles(brand, model, user_id)
+            VALUES ($1, $2, $3, $4) returning*`;
+        return await db.query(vehicleInsert, [data.brand, data.model, data.userId]);
+    }
+
+    async selectVehicle(data) {
 
         const vehicleSelect = `select * from vehicles where id=$1`;
         return await db.query(vehicleSelect, [data.vehicleId]);
     }
 
-    async updateVehicleDetail(data) {
+    async updateVehicle(data) {
 
-        const vehicleUpdate = `update public.vehicles SET brand=$2, model=$3, note=$4, updated_date=now() where id=$1 returning*`;
-        return await db.query(vehicleUpdate, [data.vehicleId, data.brand, data.model, data.note]);
+        const vehicleUpdate = `update public.vehicles SET brand=$2, model=$3, updated_date=now() where id=$1 returning*`;
+        return await db.query(vehicleUpdate, [data.vehicleId, data.brand, data.model]);
+    }
+
+    async deleteVehicle(data) {
+
+        const vehicleDelete = `delete from public.vehicles where id=$1`;
+        await db.query(vehicleDelete, [data.vehicleId]);
     }
 }
 
