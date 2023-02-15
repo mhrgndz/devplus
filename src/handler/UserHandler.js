@@ -18,7 +18,7 @@ class UserHandler {
             return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
         }
 
-        const user = await this.getUser(body);
+        const user = await this.selectUser(body);
 
         if (user.rowCount) {
             return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.INVALID_USER);
@@ -68,7 +68,7 @@ class UserHandler {
         await db.query('update users set access_token=$1 where id=$2', [token, user.rows[0].id]);
     }
 
-    async getUser(data) {
+    async selectUser(data) {
 
         const user = await db.query('select * from users where is_enabled=true and mobile_phone=$1', [data.mobilePhone]);
 
