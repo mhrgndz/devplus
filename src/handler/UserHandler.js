@@ -56,11 +56,11 @@ class UserHandler {
         return new ResponseObject({ accessToken:token }, ResponseCodes.OK);
     }
 
-    async insertUser(body, encrytedPassword) {
+    async insertUser(data, encrytedPassword) {
 
         const signinInsert = `insert into public.users(name, surname, email, mobile_phone, password)
             VALUES ($1, $2, $3, $4, $5)`;
-        await db.query(signinInsert, [body.name, body.surname, body.email, body.mobilePhone, encrytedPassword]);
+        await db.query(signinInsert, [data.name, data.surname, data.email, data.mobilePhone, encrytedPassword]);
     }
 
     async updateUser(token, user) {
@@ -68,9 +68,9 @@ class UserHandler {
         await db.query('update users set access_token=$1 where id=$2', [token, user.rows[0].id]);
     }
 
-    async getUser(body) {
+    async getUser(data) {
 
-        const user = await db.query('select * from users where is_enabled=true and mobile_phone=$1', [body.mobilePhone]);
+        const user = await db.query('select * from users where is_enabled=true and mobile_phone=$1', [data.mobilePhone]);
 
         return user;
     }

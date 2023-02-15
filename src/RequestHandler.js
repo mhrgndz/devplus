@@ -1,5 +1,7 @@
 import UserHandler from "./handler/UserHandler.js";
 import VehicleHandler from "./handler/VehicleHandler.js";
+import ResponseObject from "./objects/ResponseObject.js";
+import ResponseCodes from "./objects/ResponseCodes.js";
 
 class RequestHandler {
 
@@ -28,6 +30,7 @@ class RequestHandler {
             result = await this.funcMap[this.handler][this.func](this.event.body);
         } catch (error) {
             console.log(error);
+            result = new ResponseObject({}, ResponseCodes.SERVER_ERROR, error);
         } finally {
             console.log(JSON.stringify(result));
         }

@@ -8,6 +8,7 @@ const ErrorMessage = Object.freeze({
     INVALID_PASSWORD: "INVALID_PASSWORD",
     PATH_VERIFY_ERROR: "PATH_VERIFY_ERROR",
     INVALID_TOKEN: "INVALID_TOKEN",
+    SERVER_ERROR: "SERVER_ERROR",
 });
 
 export default ErrorMessage;
