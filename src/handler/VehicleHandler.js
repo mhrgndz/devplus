@@ -101,7 +101,7 @@ class VehicleHandler {
 
     async updateVehicle(data) {
 
-        const vehicleUpdate = `update public.vehicles SET brand=$2, model=$3, updated_date=now() where id=$1 returning*`;
+        const vehicleUpdate = `update public.vehicles set brand=$2, model=$3, updated_date=now() where id=$1 returning*`;
         return await db.query(vehicleUpdate, [data.vehicleId, data.brand, data.model]);
     }
 
