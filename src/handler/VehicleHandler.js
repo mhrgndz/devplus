@@ -2,8 +2,8 @@ import { converBase64ToImage } from 'convert-base64-to-image'
 import ResponseObject from "../objects/ResponseObject.js";
 import ResponseCodes from "../objects/ResponseCodes.js";
 import ErrorMessage from '../objects/ErrorMessage.js';
-import db from "../client/db.js";
 import Uuidv4 from "../utils/UuidUtil.js";
+import db from "../client/db.js";
 import fs from "fs";
 
 class VehicleHandler {
@@ -57,32 +57,40 @@ class VehicleHandler {
     }
 
     async photoCreate(body) {
-
+        
         if (!body.vehicleId || !Array.isArray(body.photoList)) {
             return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
         }
 
         const selectVehicleResult = await this.selectVehiclePhoto(body);
 
-        for (let i = 0; i < selectVehicleResult.rows.length; i++) {
-            fs.unlinkSync(`${process.env.VEHICLE_IMAGE_PATH}${selectVehicleResult.rows[i].photo}${process.env.IMAGE_URL}`);
-        }
+        await this.deletePhotoInFolder(selectVehicleResult.rows);
+        await this.deleteVehiclePhoto(body);
 
-        await this.deleteVehiclePhotos(body);
+        const photoName = await this.savePhotoInFolder(body.photoList);
 
         const photoList = [];
         for (let i = 0; i < body.photoList.length; i++) {
-
-            const pathName = await this.uuid.randomUuid();
-            const pathToSaveImage = `${process.env.VEHICLE_IMAGE_PATH}${pathName}${process.env.IMAGE_URL}`;
-
-            await converBase64ToImage(body.photoList[i], pathToSaveImage);
-
-            photoList.push(`('${pathName}', ${i}, ${body.vehicleId})`);
+            photoList.push(`('${photoName[i]}', ${i}, ${body.vehicleId})`);
         }
         body.photoList = photoList;
 
         await this.insertVehiclePhoto(body);
+
+        return new ResponseObject({}, ResponseCodes.OK);
+    }
+
+    async photoUpdate(body) {
+
+        if (!body.vehicleId || !body.id || !Array.isArray(body.photoList)) {
+            return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
+        }
+
+        const selectVehicleResult = await this.selectVehiclePhoto(body);
+        
+        await this.deletePhotoInFolder(selectVehicleResult.rows);
+        body.photo = (await this.savePhotoInFolder(body.photoList))[0];
+        await this.updateVehiclePhoto(body);
 
         return new ResponseObject({}, ResponseCodes.OK);
     }
@@ -113,20 +121,52 @@ class VehicleHandler {
 
     async insertVehiclePhoto(data) {
 
-		const insertVehiclePhotoQuery = `insert into vehicle_photos (photo, sort, vehicle_id) values ${data.photoList.join(",")} returning*`;
+		const insertVehiclePhotoQuery = `insert into vehicle_photos (photo, sort, vehicle_id) values ${data.photoList.join(",")}`;
         return await db.query(insertVehiclePhotoQuery);
     }
 
     async selectVehiclePhoto(data) {
 
-        const vehicleSelect = `select * from vehicle_photos where vehicle_id=$1`;
-        return await db.query(vehicleSelect, [data.vehicleId]);
+        const vehicleSelect = `select * from vehicle_photos where vehicle_id=$1 and ((id = $2) or ($2 = -1))`;
+        return await db.query(vehicleSelect, [data.vehicleId, data.id || -1]);
     }
 
-    async deleteVehiclePhotos(data) {
+    async deleteVehiclePhoto(data) {
 
         const vehicleDelete = `delete from public.vehicle_photos where vehicle_id=$1`;
         await db.query(vehicleDelete, [data.vehicleId]);
+    }
+
+    async updateVehiclePhoto(data) {
+
+        const vehicleUpdate = `update public.vehicle_photos set photo=$2, updated_date=now() where id=$1`;
+        return await db.query(vehicleUpdate, [data.id, data.photo]);
+    }
+
+    async deletePhotoInFolder(data) {
+
+        try {
+            for (let i = 0; i < data.length; i++) {
+                fs.unlinkSync(`${process.env.VEHICLE_IMAGE_PATH}${data[i].photo}${process.env.IMAGE_URL}`);
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    async savePhotoInFolder(data) {
+
+        const photoName = [];
+        for (let i = 0; i < data.length; i++) {
+
+            const pathName = await this.uuid.randomUuid();
+            const pathToSaveImage = `${process.env.VEHICLE_IMAGE_PATH}${pathName}${process.env.IMAGE_URL}`;
+
+            await converBase64ToImage(data[i], pathToSaveImage);
+            photoName.push(pathName);
+        }
+
+        return photoName;
     }
 }
 
