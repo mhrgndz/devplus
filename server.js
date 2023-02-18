@@ -9,7 +9,7 @@ import ValidateRequest from './src/middleware/ValidateRequest.js';
 const app = express();
 const validate = new ValidateRequest();
 
-app.use(express.json());
+app.use(express.json({limit: '50mb'}));
 dotenv.config();
 
 let validateResult;
