@@ -2,14 +2,14 @@ import ResponseObject from "../objects/ResponseObject.js";
 import ResponseCodes from "../objects/ResponseCodes.js";
 import ErrorMessage from '../objects/ErrorMessage.js';
 import CryptoUtil from "../utils/CryptoUtil.js";
-import Uuidv4 from "../utils/UuidUtil.js";
+import Util from "../utils/Util.js";
 import db from "../client/db.js";
 
 class UserHandler {
 
     constructor() {
         this.crypto = new CryptoUtil();
-        this.uuid = new Uuidv4();
+        this.util = new Util();
     }
 
     async signin(body) {
@@ -49,7 +49,7 @@ class UserHandler {
             return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.INVALID_PASSWORD);
         }
 
-        const token = await this.uuid.randomUuid();
+        const token = await this.util.randomUuid();
 
         await this.updateUser(token, user);
 

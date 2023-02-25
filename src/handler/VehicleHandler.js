@@ -1,20 +1,20 @@
+import db from "../client/db.js";
+import fs from "fs";
 import { converBase64ToImage } from 'convert-base64-to-image'
 import ResponseObject from "../objects/ResponseObject.js";
 import ResponseCodes from "../objects/ResponseCodes.js";
 import ErrorMessage from '../objects/ErrorMessage.js';
-import Uuidv4 from "../utils/UuidUtil.js";
-import db from "../client/db.js";
-import fs from "fs";
+import Util from '../utils/Util.js';
 
 class VehicleHandler {
 
     constructor () {
-        this.uuid = new Uuidv4();
+        this.util = new Util();
     }
 
     async create(body) {
 
-        if (!body.brand || !body.model || !body.userId) {
+        if (!body.brand || !body.model || !body.userId || !body.numberPlate) {
             return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
         }
 
@@ -25,7 +25,7 @@ class VehicleHandler {
 
     async update(body) {
 
-        if (!body.brand || !body.model || !body.vehicleId) {
+        if (!body.brand || !body.model || !body.vehicleId || !body.numberPlate) {
             return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
         }
 
@@ -121,7 +121,7 @@ class VehicleHandler {
         const response = [];
         for (let i = 0; i < selectPhotoResult.rows.length; i++) {
 
-            const photo = await this.readFile(`${process.env.VEHICLE_IMAGE_PATH}${selectPhotoResult.rows[i].photo}${process.env.IMAGE_URL}`)
+            const photo = await this.util.readFile(`${process.env.VEHICLE_IMAGE_PATH}${selectPhotoResult.rows[i].photo}${process.env.IMAGE_URL}`)
 
             response.push({
                 vehicleId: selectPhotoResult.rows[i].vehicle_id,
@@ -179,12 +179,45 @@ class VehicleHandler {
         return new ResponseObject(noteResult.rows, ResponseCodes.OK);
     }
 
+    async processCreate(body) {
+
+        if (!body.vehicleId || !body.stockId || !body.status) {
+            return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
+        }
+
+        await this.insertVehicleProcess(body);
+
+        return new ResponseObject({}, ResponseCodes.OK);
+    }
+
+    async processUpdate(body) {
+
+        if (!body.id || !body.status) {
+            return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
+        }
+
+        const updateResult = await this.updateVehicleProcess(body);
+
+        return new ResponseObject(updateResult.rows, ResponseCodes.OK);
+    }
+
+    async processDelete(body) {
+
+        if (!body.id) {
+            return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
+        }
+
+        await this.deleteVehicleProcess(body);
+
+        return new ResponseObject({}, ResponseCodes.OK);
+    }
+
     // #region Private methods
 
     async insertVehicle(data) {
 
-        const vehicleInsert = `insert into public.vehicles(brand, model, user_id) values ($1, $2, $3, $4)`;
-        return await db.query(vehicleInsert, [data.brand, data.model, data.userId]);
+        const vehicleInsert = `insert into public.vehicles(brand, model, user_id, number_plate) values ($1, $2, $3, $4)`;
+        return await db.query(vehicleInsert, [data.brand, data.model, data.userId, data.numberPlate.toUpperCase().replace(/\s/g, '')]);
     }
 
     async selectVehicle(data) {
@@ -195,8 +228,8 @@ class VehicleHandler {
 
     async updateVehicle(data) {
 
-        const vehicleUpdate = `update public.vehicles set brand=$2, model=$3, updated_date=now() where id=$1 returning*`;
-        return await db.query(vehicleUpdate, [data.vehicleId, data.brand, data.model]);
+        const vehicleUpdate = `update public.vehicles set brand=$2, model=$3, number_plate=$4, updated_date=now() where id=$1 returning*`;
+        return await db.query(vehicleUpdate, [data.vehicleId, data.brand, data.model, data.numberPlate.toUpperCase().replace(/\s/g, '')]);
     }
 
     async deleteVehicle(data) {
@@ -264,12 +297,30 @@ class VehicleHandler {
         return await db.query(vehicleSelect, [data.vehicleId, data.id || -1, data.stepStatus || -1]);
     }
 
+    async insertVehicleProcess(data) {
+
+        const vehicleProcessInsert = `insert into public.vehicle_process(vehicle_id, stock_id, status, note) values ($1, $2, $3, $4);`;
+        return await db.query(vehicleProcessInsert, [data.vehicleId, data.stockId, data.status, data.note]);
+    }
+
+    async updateVehicleProcess(data) {
+
+        const vehicleProcessUpdate = `update public.vehicle_process set status=$1, note=$2, updated_date=now() where id=$3 returning*`;
+        return await db.query(vehicleProcessUpdate, [data.status, data.note, data.id]);
+    }
+
+    async deleteVehicleProcess(data) {
+
+        const vehicleProcessDelete = `delete from public.vehicle_process where id=$1`;
+        await db.query(vehicleProcessDelete, [data.id]);
+    }
+
     async savePhotoInFolder(data) {
 
         const photoName = [];
         for (let i = 0; i < data.length; i++) {
 
-            const pathName = await this.uuid.randomUuid();
+            const pathName = await this.util.randomUuid();
             const pathToSaveImage = `${process.env.VEHICLE_IMAGE_PATH}${pathName}${process.env.IMAGE_URL}`;
 
             await converBase64ToImage(data[i], pathToSaveImage);
@@ -277,15 +328,6 @@ class VehicleHandler {
         }
 
         return photoName;
-    }
-
-    async readFile(path) {
-
-        try {
-            return await fs.promises.readFile(path);
-        } catch (err) {
-            console.error(err);
-        }
     }
 
     // #endregion Private methods
