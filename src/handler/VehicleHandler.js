@@ -212,6 +212,17 @@ class VehicleHandler {
         return new ResponseObject({}, ResponseCodes.OK);
     }
 
+    async processGet(body) {
+
+        if (!body.vehicleId) {
+            return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
+        }
+
+        const result = await this.selectVehicleProcess(body);
+
+        return new ResponseObject(result.rows, ResponseCodes.OK);
+    }
+
     // #region Private methods
 
     async insertVehicle(data) {
@@ -313,6 +324,12 @@ class VehicleHandler {
 
         const vehicleProcessDelete = `delete from public.vehicle_process where id=$1`;
         await db.query(vehicleProcessDelete, [data.id]);
+    }
+
+    async selectVehicleProcess(data) {
+
+        const vehicleProcessSelect = `select * from vehicle_process where vehicle_id=$1 and ((id = $2) or ($2 = -1)) and ((status = $3) or ($3 = -1))`;
+        return await db.query(vehicleProcessSelect, [data.vehicleId, data.id || -1, data.status || -1]);
     }
 
     async savePhotoInFolder(data) {
