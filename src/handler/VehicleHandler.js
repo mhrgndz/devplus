@@ -206,8 +206,14 @@ class VehicleHandler {
     
     async noteCreate(body) {
 
-        if (!body.vehicleId || !body.userId || !body.type || !body.note || !body.stepStatus) {
+        if (!body.vehicleId || !body.userId || !body.type || !body.note) {
             return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
+        }
+
+        const vehicleResult = await this.selectVehicle(null, body.vehicleId);
+
+        if (!vehicleResult.rowCount) {
+            return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.VEHICLE_NOT_FOUND);
         }
 
         await this.insertNote(body);
@@ -315,8 +321,8 @@ class VehicleHandler {
 
     async insertNote(data) {
 
-        const vehicleInsert = `insert into public.vehicle_notes(note, vehicle_id, user_id, type, step_status) values ($1, $2, $3, $4, $5);`;
-        return await db.query(vehicleInsert, [data.note, data.vehicleId, data.userId, data.type, data.stepStatus]);
+        const query = `insert into public.vehicle_notes(note, vehicle_id, user_id, type) values ($1, $2, $3, $4);`;
+        return await db.query(query, [data.note, data.vehicleId, data.userId, data.type]);
     }
 
     async updateNote(data) {
