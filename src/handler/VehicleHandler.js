@@ -51,86 +51,155 @@ class VehicleHandler {
             return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
         }
 
-        const vehicleResult = await this.selectVehicle(body);
+        const vehicleResult = await this.selectVehicle(body.userId);
 
         return new ResponseObject(vehicleResult.rows, ResponseCodes.OK);
     }
 
-    async photoCreate(body) {
-        
-        if (!body.vehicleId || !Array.isArray(body.photoList) || !body.stepStatus) {
+    async operationCreate(body) {
+
+        if (!body.vehicleId || !body.operationId) {
             return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
         }
 
-        const selectVehicleResult = await this.selectVehiclePhoto(body);
+        const vehicleResult = await this.selectVehicle(null, body.vehicleId);
 
-        await this.deletePhotoInFolder(selectVehicleResult.rows);
-        await this.deleteVehiclePhoto(body);
-
-        const photoName = await this.savePhotoInFolder(body.photoList);
-
-        const photoList = [];
-        for (let i = 0; i < body.photoList.length; i++) {
-            photoList.push(`('${photoName[i]}', ${i}, ${body.vehicleId}, ${body.stepStatus})`);
+        if (!vehicleResult.rowCount) {
+            return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.VEHICLE_NOT_FOUND);
         }
-        body.photoList = photoList;
 
-        await this.insertVehiclePhoto(body);
+        await this.insertVehicleOperation(body);
 
         return new ResponseObject({}, ResponseCodes.OK);
     }
 
-    async photoUpdate(body) {
+    async operationUpdate(body) {
 
-        if (!body.vehicleId || !body.id || !Array.isArray(body.photoList)) {
+        if (!body.id || !body.status) {
             return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
         }
 
-        const selectVehicleResult = await this.selectVehiclePhoto(body);
-        
-        await this.deletePhotoInFolder(selectVehicleResult.rows);
-        body.photo = (await this.savePhotoInFolder(body.photoList))[0];
-        await this.updateVehiclePhoto(body);
+        const updateResult = await this.updateVehicleOperation(body);
+
+        return new ResponseObject(updateResult.rows, ResponseCodes.OK);
+    }
+
+    async operationDelete(body) {
+
+        if (!body.id) {
+            return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
+        }
+
+        await this.deleteVehicleOperation(body);
 
         return new ResponseObject({}, ResponseCodes.OK);
     }
 
-    async photoDelete(body) {
-
-        if (!body.vehicleId || !body.id) {
-            return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
-        }
-
-        const selectVehicleResult = await this.selectVehiclePhoto(body);
-        
-        await this.deletePhotoInFolder(selectVehicleResult.rows);
-
-        await this.deleteVehiclePhoto(body);
-
-        return new ResponseObject({}, ResponseCodes.OK);
-    }
-
-    async photoGet(body) {
+    async operationGet(body) {
 
         if (!body.vehicleId) {
             return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
         }
 
-        const selectPhotoResult = await this.selectVehiclePhoto(body);
+        const result = await this.selectVehicleOperation(body);
 
-        const response = [];
-        for (let i = 0; i < selectPhotoResult.rows.length; i++) {
+        return new ResponseObject(result.rows, ResponseCodes.OK);
+    }
 
-            const photo = await this.util.readFile(`${process.env.VEHICLE_IMAGE_PATH}${selectPhotoResult.rows[i].photo}${process.env.IMAGE_URL}`)
-
-            response.push({
-                vehicleId: selectPhotoResult.rows[i].vehicle_id,
-                id: selectPhotoResult.rows[i].id,
-                sort: selectPhotoResult.rows[i].sort,
-                stepStatus: selectPhotoResult.rows[i].step_status,
-                photo: "data:image/jpeg;base64," + Buffer.from(photo).toString("base64")
-            });
+    async operationPhotoCreate(body) {
+        
+        if (!body.vehicleId || !Array.isArray(body.photoList) || !body.operationId) {
+            return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
         }
+
+        const vehicleResult = await this.selectVehicle(null, body.vehicleId);
+
+        if (!vehicleResult.rowCount) {
+            return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.VEHICLE_NOT_FOUND);
+        }
+
+        const selectVehicleResult = await this.selectOperationPhoto(body.vehicleId, -1, -1);
+
+        await this.deletePhotoInFolder(selectVehicleResult.rows);
+        await this.deleteOperationPhotoDelete(body.vehicleId, body.id);
+
+        const photoName = await this.savePhotoInFolder(body.photoList);
+
+        body.photoList = Array.from(body.photoList, (photo, index) => `('${photoName[index]}', ${index}, ${body.vehicleId}, ${body.operationId})`).join(", ");
+
+        await this.insertOperationPhoto(body);
+
+        return new ResponseObject({}, ResponseCodes.OK);
+    }
+
+    async operationPhotoUpdate(body) {
+
+        if (!body.vehicleId || !body.id || !Array.isArray(body.photoList)) {
+            return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
+        }
+        
+        const vehicleResult = await this.selectVehicle(null, body.vehicleId);
+        
+        if (!vehicleResult.rowCount) {
+            return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.VEHICLE_NOT_FOUND);
+        }
+
+        const selectVehiclePhotoResult = await this.selectOperationPhoto(body.vehicleId, body.id, null);
+
+        if (!selectVehiclePhotoResult.rowCount) {
+            return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.PHOTO_NOT_FOUND);
+        }
+
+        await this.deletePhotoInFolder(selectVehiclePhotoResult.rows);
+        
+        const photoName = await this.savePhotoInFolder(body.photoList);
+        body.photo = photoName[0];
+        
+        await this.updateOperationPhotoUpdate(body);
+        
+        return new ResponseObject({}, ResponseCodes.OK);
+    }
+
+    async operationPhotoDelete(body) {
+
+        if (!body.id || !body.vehicleId) {
+            return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
+        }
+
+        const selectVehiclePhotoResult = await this.selectOperationPhoto(body.vehicleId, body.id);
+
+        if (!selectVehiclePhotoResult.rowCount) {
+            return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.PHOTO_NOT_FOUND);
+        }
+        
+        await this.deletePhotoInFolder(selectVehiclePhotoResult.rows);
+
+        await this.deleteOperationPhotoDelete(body.vehicleId, body.id);
+
+        return new ResponseObject({}, ResponseCodes.OK);
+    }
+
+    async operationPhotoGet(body) {
+
+        if (!body.vehicleId) {
+            return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
+        }
+
+        const selectPhotoResult = await this.selectOperationPhoto(body.vehicleId, -1, body.operationId);
+
+        const response = await Promise.all(selectPhotoResult.rows.map(async (row) => {
+            const photoPath = `${process.env.VEHICLE_IMAGE_PATH}${row.photo}${process.env.IMAGE_URL}`;
+            const photoBuffer = await this.util.readFile(photoPath);
+            const photoDataUrl = `data:image/jpeg;base64,${photoBuffer.toString("base64")}`;
+          
+            return {
+                vehicleId: row.vehicle_id,
+                id: row.id,
+                sort: row.sort,
+                operationId: row.operation_id,
+                photo: photoDataUrl
+            };
+        }));
 
         return new ResponseObject(response, ResponseCodes.OK);
     }
@@ -179,50 +248,6 @@ class VehicleHandler {
         return new ResponseObject(noteResult.rows, ResponseCodes.OK);
     }
 
-    async processCreate(body) {
-
-        if (!body.vehicleId || !body.stockId || !body.status) {
-            return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
-        }
-
-        await this.insertVehicleProcess(body);
-
-        return new ResponseObject({}, ResponseCodes.OK);
-    }
-
-    async processUpdate(body) {
-
-        if (!body.id || !body.status) {
-            return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
-        }
-
-        const updateResult = await this.updateVehicleProcess(body);
-
-        return new ResponseObject(updateResult.rows, ResponseCodes.OK);
-    }
-
-    async processDelete(body) {
-
-        if (!body.id) {
-            return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
-        }
-
-        await this.deleteVehicleProcess(body);
-
-        return new ResponseObject({}, ResponseCodes.OK);
-    }
-
-    async processGet(body) {
-
-        if (!body.vehicleId) {
-            return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
-        }
-
-        const result = await this.selectVehicleProcess(body);
-
-        return new ResponseObject(result.rows, ResponseCodes.OK);
-    }
-
     // #region Private methods
 
     async insertVehicle(data) {
@@ -231,10 +256,10 @@ class VehicleHandler {
         return await db.query(vehicleInsert, [data.brand, data.model, data.userId, data.numberPlate.toUpperCase().replace(/\s/g, '')]);
     }
 
-    async selectVehicle(data) {
+    async selectVehicle(userId, vehicleId) {
 
         const vehicleSelect = `select * from vehicles where ((user_id = $1) or ($1 = -1)) or (id = $2)`;
-        return await db.query(vehicleSelect, [data.userId || null, data.vehicleId || null]);
+        return await db.query(vehicleSelect, [userId || null, vehicleId || null]);
     }
 
     async updateVehicle(data) {
@@ -249,39 +274,43 @@ class VehicleHandler {
         await db.query(vehicleDelete, [data.vehicleId]);
     }
 
-    async insertVehiclePhoto(data) {
+    async insertOperationPhoto(data) {
 
-		const insertVehiclePhotoQuery = `insert into vehicle_photos (photo, sort, vehicle_id, step_status) values ${data.photoList.join(",")}`;
+		const insertVehiclePhotoQuery = `insert into vehicle_operation_photos (photo, sort, vehicle_id, operation_id) values ${data.photoList}`;
         return await db.query(insertVehiclePhotoQuery);
     }
 
-    async selectVehiclePhoto(data) {
+    async selectOperationPhoto(vehicleId, id, operationId) {
 
-        const vehicleSelect = `select * from vehicle_photos where vehicle_id=$1 and ((id = $2) or ($2 = -1)) and ((step_status = $3) or ($3 = -1)) order by sort`;
-        return await db.query(vehicleSelect, [data.vehicleId, data.id || -1, data.stepStatus || -1]);
+        const query = `select * from vehicle_operation_photos where vehicle_id=$1 and ((id = $2) or ($2 = -1)) and ((operation_id = $3) or ($3 = -1)) order by sort`;
+        return await db.query(query, [vehicleId || null, id || -1, operationId || -1]);
     }
 
-    async deleteVehiclePhoto(data) {
+    async deleteOperationPhotoDelete(vehicleId, id) {
 
-        const vehicleDelete = `delete from public.vehicle_photos where vehicle_id=$1 and ((id = $2) or ($2 = -1))`;
-        await db.query(vehicleDelete, [data.vehicleId, data.id || -1]);
+        const query = `delete from public.vehicle_operation_photos where vehicle_id=$1 and ((id = $2) or ($2 = -1))`;
+        await db.query(query, [vehicleId, id || -1]);
     }
 
-    async updateVehiclePhoto(data) {
+    async updateOperationPhotoUpdate(data) {
 
-        const vehicleUpdate = `update public.vehicle_photos set photo=$2, updated_date=now() where id=$1`;
-        return await db.query(vehicleUpdate, [data.id, data.photo]);
+        const query = `update public.vehicle_operation_photos set photo=$2, updated_date=now() where id=$1`;
+        return await db.query(query, [data.id, data.photo]);
     }
 
     async deletePhotoInFolder(data) {
 
-        try {
-            for (let i = 0; i < data.length; i++) {
-                fs.unlinkSync(`${process.env.VEHICLE_IMAGE_PATH}${data[i].photo}${process.env.IMAGE_URL}`);
+        const vehicleImagePath = process.env.VEHICLE_IMAGE_PATH;
+        const imageUrl = process.env.IMAGE_URL;
+        
+        data.forEach(photo => {
+          const photoPath = `${vehicleImagePath}${photo.photo}${imageUrl}`;
+          fs.unlink(photoPath, (err) => {
+            if (err) {
+              console.error(err);
             }
-        } catch (err) {
-            console.log(err);
-        }
+          });
+        });
     }
 
     async insertNote(data) {
@@ -308,28 +337,28 @@ class VehicleHandler {
         return await db.query(vehicleSelect, [data.vehicleId, data.id || -1, data.stepStatus || -1]);
     }
 
-    async insertVehicleProcess(data) {
+    async insertVehicleOperation(data) {
 
-        const vehicleProcessInsert = `insert into public.vehicle_process(vehicle_id, stock_id, status, note) values ($1, $2, $3, $4);`;
-        return await db.query(vehicleProcessInsert, [data.vehicleId, data.stockId, data.status, data.note]);
+        const query = `insert into public.vehicle_operation(vehicle_id, operation_id) values ($1, $2);`;
+        return await db.query(query, [data.vehicleId, data.operationId]);
     }
 
-    async updateVehicleProcess(data) {
+    async updateVehicleOperation(data) {
 
-        const vehicleProcessUpdate = `update public.vehicle_process set status=$1, note=$2, updated_date=now() where id=$3 returning*`;
-        return await db.query(vehicleProcessUpdate, [data.status, data.note, data.id]);
+        const query = `update public.vehicle_operation set status=$1, updated_date=now() where id=$2 returning*`;
+        return await db.query(query, [data.status, data.id]);
     }
 
-    async deleteVehicleProcess(data) {
+    async deleteVehicleOperation(data) {
 
-        const vehicleProcessDelete = `delete from public.vehicle_process where id=$1`;
-        await db.query(vehicleProcessDelete, [data.id]);
+        const query = `delete from public.vehicle_operation where id=$1`;
+        await db.query(query, [data.id]);
     }
 
-    async selectVehicleProcess(data) {
+    async selectVehicleOperation(data) {
 
-        const vehicleProcessSelect = `select * from vehicle_process where vehicle_id=$1 and ((id = $2) or ($2 = -1)) and ((status = $3) or ($3 = -1))`;
-        return await db.query(vehicleProcessSelect, [data.vehicleId, data.id || -1, data.status || -1]);
+        const query = `select * from vehicle_operation where vehicle_id=$1 and ((id = $2) or ($2 = -1)) and ((status = $3) or ($3 = -1))`;
+        return await db.query(query, [data.vehicleId, data.id || -1, data.status || -1]);
     }
 
     async savePhotoInFolder(data) {

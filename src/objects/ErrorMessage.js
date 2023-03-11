@@ -10,6 +10,8 @@ const ErrorMessage = Object.freeze({
     INVALID_TOKEN: "INVALID_TOKEN",
     SERVER_ERROR: "SERVER_ERROR",
     PHONE_NUMBER_EXISTS: "PHONE_NUM_EXISTS",
+    VEHICLE_NOT_FOUND: "VEHICLE_NOT_FOUND",
+    PHOTO_NOT_FOUND: "PHOTO_NOT_FOUND"
 });
 
 export default ErrorMessage;
