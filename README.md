@@ -1,6 +1,6 @@
 # devplus
 
-<b>Extensions;</b>
+<b>Extensions;</b><br>
 vscode-node-debug-process-picker
 <br>
 Git History
