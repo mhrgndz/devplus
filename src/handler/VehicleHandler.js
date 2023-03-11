@@ -339,8 +339,8 @@ class VehicleHandler {
 
     async selectVehicleNote(data) {
 
-        const vehicleSelect = `select * from vehicle_notes where vehicle_id=$1 and ((id = $2) or ($2 = -1)) and ((step_status = $3) or ($3 = -1))`;
-        return await db.query(vehicleSelect, [data.vehicleId, data.id || -1, data.stepStatus || -1]);
+        const vehicleSelect = `select * from vehicle_notes where vehicle_id=$1 and ((id = $2) or ($2 = -1))`;
+        return await db.query(vehicleSelect, [data.vehicleId, data.id || -1]);
     }
 
     async insertVehicleOperation(data) {
