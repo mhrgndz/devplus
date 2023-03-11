@@ -47,7 +47,7 @@ class VehicleHandler {
 
     async get(body) {
 
-        if (!body.vehicleId) {
+        if (!body.userId) {
             return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
         }
 
@@ -233,8 +233,8 @@ class VehicleHandler {
 
     async selectVehicle(data) {
 
-        const vehicleSelect = `select * from vehicles where id=$1`;
-        return await db.query(vehicleSelect, [data.vehicleId]);
+        const vehicleSelect = `select * from vehicles where ((user_id = $1) or ($1 = -1)) or (id = $2)`;
+        return await db.query(vehicleSelect, [data.userId || null, data.vehicleId || null]);
     }
 
     async updateVehicle(data) {

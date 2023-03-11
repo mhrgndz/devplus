@@ -34,4 +34,4 @@ app.post('/api/*', async (req, res) => {
     res.send(await reqHandler.dispatch());
 });
 
-app.listen(process.env.PORT);
+app.listen(process.env.PORT, "0.0.0.0");

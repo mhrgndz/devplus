@@ -1,7 +1,9 @@
-import UserHandler from "./handler/UserHandler.js";
-import VehicleHandler from "./handler/VehicleHandler.js";
 import ResponseObject from "./objects/ResponseObject.js";
 import ResponseCodes from "./objects/ResponseCodes.js";
+
+import UserHandler from "./handler/UserHandler.js";
+import VehicleHandler from "./handler/VehicleHandler.js";
+import LoginHandler from "./handler/LoginHandler.js";
 
 class RequestHandler {
 
@@ -9,9 +11,11 @@ class RequestHandler {
         this.event = event;
         this.userInstance = new UserHandler();
         this.vehicleInstance = new VehicleHandler();
+        this.loginInstance = new LoginHandler();
         this.funcMap = {
+            "login": this.loginInstance,
             "user": this.userInstance,
-            "vehicle": this.vehicleInstance
+            "vehicle": this.vehicleInstance,
         };
 
         this.findPath(event);

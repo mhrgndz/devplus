@@ -9,6 +9,7 @@ const ErrorMessage = Object.freeze({
     PATH_VERIFY_ERROR: "PATH_VERIFY_ERROR",
     INVALID_TOKEN: "INVALID_TOKEN",
     SERVER_ERROR: "SERVER_ERROR",
+    PHONE_NUMBER_EXISTS: "PHONE_NUM_EXISTS",
 });
 
 export default ErrorMessage;
