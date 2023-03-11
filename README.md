@@ -1,8 +1,8 @@
 # devplus
 
 <b>Extensions;</b><br>
-vscode-node-debug-process-picker
+npm i vscode-node-debug-process-picker
 <br>
-Git History
+npm i Git History
 <br>
 node 16.18.1
