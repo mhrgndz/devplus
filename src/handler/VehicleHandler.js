@@ -1,4 +1,4 @@
-import db from "../client/db.js";
+import db from "../client/Db.js";
 import fs from "fs";
 import { converBase64ToImage } from 'convert-base64-to-image'
 import ResponseObject from "../objects/ResponseObject.js";

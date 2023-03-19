@@ -1,4 +1,4 @@
-import db from '../client/db.js'
+import db from '../client/Db.js'
 
 class Authentication {
     async verifyToken(req) {

@@ -2,8 +2,7 @@ import ResponseObject from "../objects/ResponseObject.js";
 import ResponseCodes from "../objects/ResponseCodes.js";
 import ErrorMessage from '../objects/ErrorMessage.js';
 import CryptoUtil from "../utils/CryptoUtil.js";
-import Util from "../utils/Util.js";
-import db from "../client/db.js";
+import db from "../client/Db.js";
 
 class UserHandler {
 
