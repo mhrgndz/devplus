@@ -15,6 +15,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "amqplib": "^0.10.3",
     "convert-base64-to-image": "^0.0.16",
     "cors": "^2.8.5",
     "crypto-js": "^4.0.0",
