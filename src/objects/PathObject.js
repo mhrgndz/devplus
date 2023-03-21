@@ -1,6 +1,7 @@
 const PathObject = 
 [
-    "login"
+    "login",
+    "verifyToken"
 ];
 
 export default PathObject;

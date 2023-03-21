@@ -3,13 +3,11 @@ import ResponseCodes from "../objects/ResponseCodes.js";
 import ErrorMessage from '../objects/ErrorMessage.js';
 import CryptoUtil from "../utils/CryptoUtil.js";
 import db from "../services/Db.js";
-import RabbitMQ from "../services/RabbitMQ.js";
 
 class UserHandler {
 
     constructor() {
         this.crypto = new CryptoUtil();
-        this.rabbit = new RabbitMQ();
     }
 
     async signin(body) {

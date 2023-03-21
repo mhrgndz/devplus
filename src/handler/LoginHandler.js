@@ -48,6 +48,21 @@ class LoginHandler {
 
         return user;
     }
+
+    async verifyToken(body) {
+
+        if (!body.token) {
+            return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
+        }
+
+        const tokenResult = await db.query("select id from users where is_enabled = true and access_token=$1", [body.token]);
+
+        if (!tokenResult.rowCount) {
+            return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.INVALID_TOKEN);
+        }
+
+        return new ResponseObject({ isAuth:true }, ResponseCodes.OK);
+    }
 }
 
 export default LoginHandler;
