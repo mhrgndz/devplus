@@ -55,13 +55,13 @@ class LoginHandler {
             return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.MISSING_PARAMETERS);
         }
 
-        const tokenResult = await db.query("select id from users where is_enabled = true and access_token=$1", [body.token]);
+        const tokenResult = await db.query("select role from users where is_enabled = true and access_token=$1", [body.token]);
 
         if (!tokenResult.rowCount) {
             return new ResponseObject({}, ResponseCodes.ERROR, ErrorMessage.INVALID_TOKEN);
         }
 
-        return new ResponseObject({ isAuth:true }, ResponseCodes.OK);
+        return new ResponseObject({ isAuth:true, role: tokenResult.rows[0].role.role }, ResponseCodes.OK);
     }
 }
 
