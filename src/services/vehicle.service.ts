@@ -11,6 +11,8 @@ import VehicleUpdateRequestDto from "src/dto/vehicle/vehicle.update.dto";
 import VehicleDeleteDto from "src/dto/vehicle/vehicle.delete.dto";
 import VehicleCreateOperationDto from "src/dto/vehicle/vehicle.create.operation.dto";
 import VehicleOperationRequestDto from "src/dto/vehicle/vehicle.operation.dto";
+import VehicleUpdateOperationDto from "src/dto/vehicle/vehicle.update.operation";
+import VehicleDeleteOperationDto from "src/dto/vehicle/vehicle.delete.operation";
 
 @Injectable()
 export default class VehicleService extends BaseService {
@@ -67,10 +69,16 @@ export default class VehicleService extends BaseService {
             return new ErrorResult(ErrorCodes.VEHICLE_NOT_FOUND);
         }
 
-        const operationResult = await this.selectVehicleOperation(vehicleId);
+        const operationResult = await this.selectOperation(operationId);
 
         if (!operationResult.rowCount) {
-            return new ErrorResult(ErrorCodes.VEHICLE_NOT_FOUND);
+            return new ErrorResult(ErrorCodes.OPERATION_NOT_FOUND);
+        }
+
+        const vehicleOperationResult = await this.vehicleOperationControl(vehicleId, operationId);
+
+        if (vehicleOperationResult.rowCount) {
+            return new ErrorResult(ErrorCodes.OPERATION_AVAIBLE);
         }
 
         await this.insertVehicleOperation(vehicleId, operationId);
@@ -90,6 +98,46 @@ export default class VehicleService extends BaseService {
         const resultOperation = await this.selectVehicleOperation(vehicleId);
 
         return new SuccessResult(resultOperation.rows);
+    }
+
+    public async operationUpdate(reqDto: VehicleUpdateOperationDto): Promise<Result<BaseResponseDto[]>> {
+        const { vehicleId, operationId, status } = reqDto;
+
+        const vehicleResult = await this.selectVehicle(null, vehicleId);
+
+        if (!vehicleResult.rowCount) {
+            return new ErrorResult(ErrorCodes.VEHICLE_NOT_FOUND);
+        }
+
+        const vehicleOperationResult = await this.vehicleOperationControl(vehicleId, operationId);
+
+        if (!vehicleOperationResult.rowCount) {
+            return new ErrorResult(ErrorCodes.OPERATION_NOT_FOUND);
+        }
+
+        await this.updateVehicleOperation(vehicleOperationResult.rows[0].id, status);
+
+        return new SuccessResult();
+    }
+
+    public async operationDelete(reqDto: VehicleDeleteOperationDto): Promise<Result<BaseResponseDto[]>> {
+        const { vehicleId, operationId } = reqDto;
+
+        const vehicleResult = await this.selectVehicle(null, vehicleId);
+
+        if (!vehicleResult.rowCount) {
+            return new ErrorResult(ErrorCodes.VEHICLE_NOT_FOUND);
+        }
+
+        const vehicleOperationResult = await this.vehicleOperationControl(vehicleId, operationId);
+
+        if (!vehicleOperationResult.rowCount) {
+            return new ErrorResult(ErrorCodes.OPERATION_NOT_FOUND);
+        }
+
+        await this.deleteVehicleOperation(vehicleOperationResult.rows[0].id);
+
+        return new SuccessResult();
     }
 
     // #region Private methods
@@ -115,14 +163,37 @@ export default class VehicleService extends BaseService {
         await this.dbService.query(query, [vehicleId]);
     }
 
+    async selectOperation(operationId: number) {
+        const query = `select * from operations where id=$1`;
+        return await this.dbService.query(query, [operationId]);
+    }
+
+    async vehicleOperationControl(vehicleId: number, operationId: number) {
+        const query = `select * from vehicle_operation where vehicle_id=$1 and operation_id=$2`;
+        return await this.dbService.query(query, [vehicleId, operationId]);
+    }
+
     async insertVehicleOperation(vehicleId: number, operationId: number) {
         const query = `insert into public.vehicle_operation(vehicle_id, operation_id) values ($1, $2);`;
         return await this.dbService.query(query, [vehicleId, operationId]);
     }
 
     async selectVehicleOperation(vehicleId: number, operationId?: number, operationStatus?: number) {
-        const query = `select * from vehicle_operation where vehicle_id=$1 and ((id = $2) or ($2 = -1)) and ((status = $3) or ($3 = -1))`;
+        const query = `select vo.id,vehicle_id as "vehicleId", operation_id as "operationId",
+        status, name as "operationName" from vehicle_operation vo
+        inner join operations o on vo.operation_id = o.id  where vehicle_id=$1 and ((vo.id = $2) or ($2 = -1)) and ((status = $3) or ($3 = -1))`;
         return await this.dbService.query(query, [vehicleId, operationId || -1, operationStatus || -1]);
+    }
+
+    async updateVehicleOperation(vehicleOperationId: number, status:number) {
+        const query = `update public.vehicle_operation set status=$1, updated_date=now() where id=$2 `;
+        return await this.dbService.query(query, [status, vehicleOperationId]);
+    }
+
+    async deleteVehicleOperation(id: number) {
+
+        const query = `delete from public.vehicle_operation where id=$1`;
+        await this.dbService.query(query, [id]);
     }
 
     // #endregion Private methods

@@ -11,6 +11,8 @@ import VehicleUpdateDto from "src/dto/vehicle/vehicle.update.dto";
 import VehicleDeleteDto from "src/dto/vehicle/vehicle.delete.dto";
 import VehicleOperationDto from "src/dto/vehicle/vehicle.create.operation.dto";
 import VehicleOperationRequestDto from "src/dto/vehicle/vehicle.operation.dto";
+import VehicleUpdateOperationDto from "src/dto/vehicle/vehicle.update.operation";
+import VehicleDeleteOperationDto from "src/dto/vehicle/vehicle.delete.operation";
 
 @Controller("vehicle")
 export default class VehicleController {
@@ -55,6 +57,20 @@ export default class VehicleController {
     @Validator(VehicleOperationRequestDto)
     public async operationGet(@Body() reqDto: VehicleOperationRequestDto): Promise<Result<BaseResponseDto[]>> {
         const result = await this.loginService.operationGet(reqDto);
+        return result;
+    }
+
+    @Post("operationUpdate")
+    @Validator(VehicleUpdateOperationDto)
+    public async operationUpdate(@Body() reqDto: VehicleUpdateOperationDto): Promise<Result<BaseResponseDto[]>> {
+        const result = await this.loginService.operationUpdate(reqDto);
+        return result;
+    }
+
+    @Post("operationDelete")
+    @Validator(VehicleDeleteOperationDto)
+    public async operationDelete(@Body() reqDto: VehicleDeleteOperationDto): Promise<Result<BaseResponseDto[]>> {
+        const result = await this.loginService.operationDelete(reqDto);
         return result;
     }
 } 
