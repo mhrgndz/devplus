@@ -73,4 +73,4 @@ export default class VehicleController {
         const result = await this.loginService.operationDelete(reqDto);
         return result;
     }
-} 
+}
