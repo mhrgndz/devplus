@@ -1,4 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { converBase64ToImage } from 'convert-base64-to-image'
+import { unlink } from 'node:fs/promises';
 import * as CryptoJS from "crypto-js";
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
@@ -15,6 +17,28 @@ export default class BaseService {
         } catch (err) {
             console.error(err);
         }
+    }
+
+    async savePhotoInFolder(photoList: string[], path: string, extension: string) {
+        const photoName = await Promise.all(photoList.map(async (item) => {
+            const pathName = await this.randomUuid();
+            const pathToSaveImage = `${path}${pathName}${extension}`;
+            await converBase64ToImage(item, pathToSaveImage);
+            return pathName;
+        }));
+        
+        return photoName;
+    }
+
+    async deletePhotoInFolder(dataList, path: string, extension: string) {
+        dataList.map(async (data) => {
+            const photoPath = `${path}${data.photo}${extension}`;
+            try {
+                await unlink(photoPath);
+            } catch (err) {
+                console.error(err);
+            }
+        });
     }
 
     async decrypt(data: string, secret:string) {
