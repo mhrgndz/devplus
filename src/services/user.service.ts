@@ -2,8 +2,9 @@ import { Injectable } from "@nestjs/common";
 import { Result, SuccessResult, ErrorResult } from "src/objects/Result";
 import BaseService from "./base.service";
 import ErrorCodes from "src/objects/ErrorCodes";
-import SigninRequestDto from "src/dto/user/signin.request.dto";
+
 import BaseResponseDto from "src/dto/base.response.dto";
+import SigninRequestDto from "src/dto/user/signin.request.dto";
 import UserRequestDto from "src/dto/user/user.request.dto";
 import UpdateUserDto from "src/dto/user/update.user.dto";
 import DeleteUserDto from "src/dto/user/delete.user.dto";
@@ -26,7 +27,7 @@ export default class UserService extends BaseService {
         return new SuccessResult();
     }
 
-    public async get(reqDto: UserRequestDto) {
+    public async get(reqDto: UserRequestDto): Promise<Result<BaseResponseDto[]>> {
         const { userId } = reqDto;
 
         const user = await this.selectUser(null, userId);
@@ -38,7 +39,7 @@ export default class UserService extends BaseService {
         return new SuccessResult(user.rows);
     }
 
-    public async update(reqDto: UpdateUserDto) {
+    public async update(reqDto: UpdateUserDto): Promise<Result<BaseResponseDto[]>> {
         const { userId, name, surname, email, mobilePhone, isEnabled, password } = reqDto;
 
         const user = await this.selectUser(null, userId);
@@ -54,7 +55,7 @@ export default class UserService extends BaseService {
         return new SuccessResult();
     }
 
-    public async delete(reqDto: DeleteUserDto) {
+    public async delete(reqDto: DeleteUserDto): Promise<Result<BaseResponseDto[]>> {
         const { userId } = reqDto;
 
         const user = await this.selectUser(null, userId);
@@ -79,10 +80,10 @@ export default class UserService extends BaseService {
     }
 
     async insertUser(name: string, surname: string, email: string, mobilePhone: string, encrytedPassword: string) {
-        const signinInsert = `insert into public.users(name, surname, email, mobile_phone, password)
+        const query = `insert into public.users(name, surname, email, mobile_phone, password)
             VALUES ($1, $2, $3, $4, $5)`;
 
-        await this.dbService.query(signinInsert, [name, surname, email, mobilePhone, encrytedPassword]);
+        await this.dbService.query(query, [name, surname, email, mobilePhone, encrytedPassword]);
     }
 
     async updateUser(userId: number, name: string, surname: string, email: string, mobilePhone: string, isEnabled: boolean, encrytedPassword: string) {
