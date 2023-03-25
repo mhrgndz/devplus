@@ -13,7 +13,10 @@ import VehicleCreateOperationDto from "src/dto/vehicle/vehicle.create.operation.
 import VehicleOperationRequestDto from "src/dto/vehicle/vehicle.operation.dto";
 import VehicleUpdateOperationDto from "src/dto/vehicle/vehicle.update.operation";
 import VehicleDeleteOperationDto from "src/dto/vehicle/vehicle.delete.operation";
+import VehicleOperationPhotoDto from "src/dto/vehicle/vehicle.operation.photo.dto";
 import VehiclePhotoCreateDto from "src/dto/vehicle/vehicle.photo.create.dto";
+import VehiclePhotoUpdateDto from "src/dto/vehicle/vehicle.photo.update.dto";
+import VehiclePhotoDeleteDto from "src/dto/vehicle/vehicle.photo.delete.dto";
 
 @Injectable()
 export default class VehicleService extends BaseService {
@@ -150,18 +153,100 @@ export default class VehicleService extends BaseService {
             return new ErrorResult(ErrorCodes.VEHICLE_NOT_FOUND);
         }
 
-        const selectVehicleResult = await this.selectOperationPhoto(vehicleId, -1, -1);
+        const vehicleOperationResult = await this.vehicleOperationControl(vehicleId, operationId);
+
+        if (!vehicleOperationResult.rowCount) {
+            return new ErrorResult(ErrorCodes.OPERATION_NOT_FOUND);
+        }
+
+        const operationPhoto = await this.selectOperationPhoto(vehicleId, -1, operationId);
         const vehicleImagePath = process.env.VEHICLE_IMAGE_PATH;
         const extension = process.env.IMAGE_EXTENSION;
 
-        await this.deletePhotoInFolder(selectVehicleResult.rows, vehicleImagePath, extension);
-        await this.deleteOperationPhotoDelete(vehicleId, -1); 
+        await this.deletePhotoInFolder(operationPhoto.rows, vehicleImagePath, extension);
+        await this.deleteOperationPhotoDelete(vehicleId, -1, operationId); 
 
         const photoName = await this.savePhotoInFolder(photoList, process.env.VEHICLE_IMAGE_PATH, process.env.IMAGE_EXTENSION);
-
         const photoListValue = Array.from(photoList, (photo, index) => `('${photoName[index]}', ${index}, ${vehicleId}, ${operationId})`).join(", ");
 
         await this.insertOperationPhoto(photoListValue);
+
+        return new SuccessResult();
+    }
+
+    public async operationPhotoGet(reqDto: VehicleOperationPhotoDto): Promise<Result<BaseResponseDto[]>> {
+        const { vehicleId, operationId } = reqDto;
+
+        const vehicleResult = await this.selectVehicle(null, vehicleId);
+
+        if (!vehicleResult.rowCount) {
+            return new ErrorResult(ErrorCodes.VEHICLE_NOT_FOUND);
+        }
+
+        const selectPhotoResult = await this.selectOperationPhoto(vehicleId, -1, operationId);
+        const response = await Promise.all(selectPhotoResult.rows.map(async (row) => {
+            const photoPath = `${process.env.VEHICLE_IMAGE_PATH}${row.photo}${process.env.IMAGE_EXTENSION}`;
+            const photoBuffer = await this.readFile(photoPath);
+            const photoDataUrl = `data:image/jpeg;base64,${photoBuffer.toString("base64")}`;
+          
+            return {
+                vehicleId: row.vehicle_id,
+                id: row.id,
+                sort: row.sort,
+                operationId: row.operation_id,
+                photo: photoDataUrl
+            };
+        }));
+
+        return new SuccessResult(response);
+    }
+
+    public async operationPhotoUpdate(reqDto: VehiclePhotoUpdateDto): Promise<Result<BaseResponseDto[]>> {
+        const { vehicleId, id, photoList } = reqDto;
+
+        const vehicleResult = await this.selectVehicle(null, vehicleId);
+
+        if (!vehicleResult.rowCount) {
+            return new ErrorResult(ErrorCodes.VEHICLE_NOT_FOUND);
+        }
+
+        const operationPhoto = await this.selectOperationPhoto(vehicleId, id, -1);
+
+        if (!operationPhoto.rowCount) {
+            return new ErrorResult(ErrorCodes.PHOTO_NOT_FOUND);
+        }
+
+        const vehicleImagePath = process.env.VEHICLE_IMAGE_PATH;
+        const extension = process.env.IMAGE_EXTENSION;
+
+        await this.deletePhotoInFolder(operationPhoto.rows, vehicleImagePath, extension);
+        const photoUrl = await this.savePhotoInFolder(photoList, vehicleImagePath, extension);
+
+        await this.updateOperationPhotoUpdate(id, photoUrl[0]);
+
+        return new SuccessResult();
+    }
+
+    public async operationPhotoDelete(reqDto: VehiclePhotoDeleteDto): Promise<Result<BaseResponseDto[]>> {
+        const { vehicleId, id } = reqDto;
+
+        const vehicleResult = await this.selectVehicle(null, vehicleId);
+
+        if (!vehicleResult.rowCount) {
+            return new ErrorResult(ErrorCodes.VEHICLE_NOT_FOUND);
+        }
+
+        const operationPhoto = await this.selectOperationPhoto(vehicleId, id, -1);
+
+        if (!operationPhoto.rowCount) {
+            return new ErrorResult(ErrorCodes.PHOTO_NOT_FOUND);
+        }
+
+        const vehicleImagePath = process.env.VEHICLE_IMAGE_PATH;
+        const extension = process.env.IMAGE_EXTENSION;
+
+        await this.deletePhotoInFolder(operationPhoto.rows, vehicleImagePath, extension);
+        await this.deleteOperationPhotoDelete(vehicleId, id, -1); 
 
         return new SuccessResult();
     }
@@ -227,14 +312,19 @@ export default class VehicleService extends BaseService {
         return await this.dbService.query(query, [vehicleId || null, id || -1, operationId || -1]);
     }
 
-    async deleteOperationPhotoDelete(vehicleId: number, id: number) {
-        const query = `delete from public.vehicle_operation_photos where vehicle_id=$1 and ((id = $2) or ($2 = -1))`;
-        await this.dbService.query(query, [vehicleId, id || -1]);
+    async deleteOperationPhotoDelete(vehicleId: number, id: number, operationId: number) {
+        const query = `delete from public.vehicle_operation_photos where vehicle_id=$1 and ((id = $2) or ($2 = -1)) and ((operation_id = $3) or ($3 = -1))`;
+        await this.dbService.query(query, [vehicleId, id || -1, operationId || -1]);
     }
 
     async insertOperationPhoto(valueList) {
 		const query = `insert into vehicle_operation_photos (photo, sort, vehicle_id, operation_id) values ${valueList}`;
         return await this.dbService.query(query);
+    }
+
+    async updateOperationPhotoUpdate(id: number, photo: string) {
+        const query = `update public.vehicle_operation_photos set photo=$2, updated_date=now() where id=$1`;
+        return await this.dbService.query(query, [id, photo]);
     }
 
     // #endregion Private methods

@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from "@nestjs/common";
+import { Body, Controller, Post, UseInterceptors } from "@nestjs/common";
 import LoginService from "src/services/login.service";
 import Validator from "../decorators/validation.decorator";
 import { Result } from "src/objects/Result";
