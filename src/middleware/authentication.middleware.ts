@@ -2,6 +2,7 @@ import { NestMiddleware, Injectable } from "@nestjs/common";
 import ErrorCodes from "src/objects/ErrorCodes";
 import DbService from "src/services/db.service";
 import pathObject from "src/objects/PathObject";
+import { Result } from "src/objects/Result";
 
 @Injectable()
 export default class AuthMiddleware implements NestMiddleware {
@@ -24,12 +25,13 @@ export default class AuthMiddleware implements NestMiddleware {
             const tokenResult = await this.verifyToken(accessToken);
     
             if(!tokenResult) {
-                throw new Error(ErrorCodes.INVALID_TOKEN);
+                res.send(new Result(false, {}, ErrorCodes.INVALID_TOKEN));
+                return;
             }
 
             next();
         } else {
-            throw new Error(ErrorCodes.AUTHORIZATION_ERROR);
+            res.send(new Result(false, {}, ErrorCodes.AUTHORIZATION_ERROR));
         }
     }
 
