@@ -15,8 +15,6 @@ async function bootstrap() {
   app.use(urlencoded({ limit: "50mb", extended: true }));
 
   await app.init();
-  app.enableCors();
-
   await app.listen(process.env.SERVER_PORT, "0.0.0.0");
 }
 
