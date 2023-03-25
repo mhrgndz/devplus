@@ -35,13 +35,13 @@ export default class LoginService extends BaseService {
     async verifyToken(reqDto: VerifyTokenRequestDto): Promise<Result<VerifyTokenResponseDto[]>> {
         const { accessToken } = reqDto;
 
-        const tokenResult = await this.dbService.query("select id from users where is_enabled = true and access_token=$1", [accessToken]);
+        const tokenResult = await this.dbService.query("select name,surname,email,mobile_phone,role from users where is_enabled = true and access_token=$1", [accessToken]);
 
         if (!tokenResult.rowCount) {
             return new ErrorResult(ErrorCodes.INVALID_TOKEN);
         }
 
-        return new SuccessResult({ isAuth:true, role: tokenResult.rows[0].role });
+        return new SuccessResult({ isAuth:true, userInfo:tokenResult.rows[0] });
     }
 
     // #region Private methods
