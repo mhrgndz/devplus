@@ -7,7 +7,9 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   dotenv.config();
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    cors: true,
+  });
 
   app.use(json({ limit: "50mb" }));
   app.use(urlencoded({ limit: "50mb", extended: true }));
