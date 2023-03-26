@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { Result, SuccessResult, ErrorResult } from "src/objects/Result";
 import BaseService from "./base.service";
 import ErrorCodes from "src/objects/ErrorCodes";
+import { VehicleNoteType, VehicleOperationStatus } from "src/objects/Enums";
 
 import BaseResponseDto from "src/dto/base.response.dto";
 import VehicleCreateDto from "src/dto/vehicle/vehicle.create.dto";
@@ -17,6 +18,10 @@ import VehicleOperationPhotoDto from "src/dto/vehicle/vehicle.operation.photo.dt
 import VehiclePhotoCreateDto from "src/dto/vehicle/vehicle.photo.create.dto";
 import VehiclePhotoUpdateDto from "src/dto/vehicle/vehicle.photo.update.dto";
 import VehiclePhotoDeleteDto from "src/dto/vehicle/vehicle.photo.delete.dto";
+import VehicleNoteCreateDto from "src/dto/vehicle/vehicle.note.create.dto";
+import VehicleNoteUpdateDto from "src/dto/vehicle/vehicle.note.update.dto";
+import VehicleNoteRequestDto from "src/dto/vehicle/vehicle.note.dto";
+import VehicleNoteDeleteDto from "src/dto/vehicle/vehicle.note.delete.dto";
 
 @Injectable()
 export default class VehicleService extends BaseService {
@@ -251,6 +256,79 @@ export default class VehicleService extends BaseService {
         return new SuccessResult();
     }
 
+    public async noteCreate(reqDto: VehicleNoteCreateDto): Promise<Result<BaseResponseDto[]>> {
+        const { vehicleId, userId, type, note } = reqDto;
+
+        const vehicleResult = await this.selectVehicle(null, vehicleId);
+
+        if (!vehicleResult.rowCount) {
+            return new ErrorResult(ErrorCodes.VEHICLE_NOT_FOUND);
+        }
+
+        let noteType = VehicleNoteType.Customer;
+        if (type === 1) {
+            noteType = VehicleNoteType.Admin;
+        }
+
+        await this.insertNote(vehicleId, userId, noteType, note);
+
+        return new SuccessResult();
+    }
+
+    public async noteUpdate(reqDto: VehicleNoteUpdateDto): Promise<Result<BaseResponseDto[]>> {
+        const { vehicleId, id, note } = reqDto;
+
+        const vehicleResult = await this.selectVehicle(null, vehicleId);
+
+        if (!vehicleResult.rowCount) {
+            return new ErrorResult(ErrorCodes.VEHICLE_NOT_FOUND);
+        }
+
+        const noteResult = await this.selectVehicleNote(vehicleId, id);
+
+        if (!noteResult.rowCount) {
+            return new ErrorResult(ErrorCodes.NOTE_NOT_FOUND);
+        }
+
+        await this.updateNote(id, note);
+
+        return new SuccessResult();
+    }
+
+    public async noteGet(reqDto: VehicleNoteRequestDto): Promise<Result<BaseResponseDto[]>> {
+        const { vehicleId } = reqDto;
+
+        const vehicleResult = await this.selectVehicle(null, vehicleId);
+
+        if (!vehicleResult.rowCount) {
+            return new ErrorResult(ErrorCodes.VEHICLE_NOT_FOUND);
+        }
+
+        const noteResult = await this.selectVehicleNote(vehicleId);
+
+        return new SuccessResult(noteResult.rows);
+    }
+
+    public async noteDelete(reqDto: VehicleNoteDeleteDto): Promise<Result<BaseResponseDto[]>> {
+        const { id, vehicleId } = reqDto;
+
+        const vehicleResult = await this.selectVehicle(null, vehicleId);
+
+        if (!vehicleResult.rowCount) {
+            return new ErrorResult(ErrorCodes.VEHICLE_NOT_FOUND);
+        }
+
+        const noteResult = await this.selectVehicleNote(vehicleId, id);
+
+        if (!noteResult.rowCount) {
+            return new ErrorResult(ErrorCodes.NOTE_NOT_FOUND);
+        }
+
+        await this.deleteNote(id);
+
+        return new SuccessResult();
+    }
+
     // #region Private methods
 
     async insertVehicle(userId: number, brand: string, model: string, numberPlate: string) {
@@ -325,6 +403,26 @@ export default class VehicleService extends BaseService {
     async updateOperationPhotoUpdate(id: number, photo: string) {
         const query = `update public.vehicle_operation_photos set photo=$2, updated_date=now() where id=$1`;
         return await this.dbService.query(query, [id, photo]);
+    }
+
+    async insertNote(vehicleId: number, userId: number, type: number, note: string) {
+        const query = `insert into public.vehicle_notes(note, vehicle_id, user_id, type) values ($1, $2, $3, $4);`;
+        return await this.dbService.query(query, [note, vehicleId, userId, type]);
+    }
+
+    async selectVehicleNote(vehicleId: number, noteId?: number) {
+        const query = `select id,vehicle_id as "vehicleId", type, user_id as "userId",note from vehicle_notes where vehicle_id=$1 and ((id = $2) or ($2 = -1))`;
+        return await this.dbService.query(query, [vehicleId, noteId || -1]);
+    }
+
+    async updateNote(id: number, note: string) {
+        const noteUpdate = `update public.vehicle_notes set note=$1 where id=$2`;
+        return await this.dbService.query(noteUpdate, [note, id]);
+    }
+
+    async deleteNote(id: number) {
+        const query = `delete from public.vehicle_notes where id=$1`;
+        await this.dbService.query(query, [id]);
     }
 
     // #endregion Private methods

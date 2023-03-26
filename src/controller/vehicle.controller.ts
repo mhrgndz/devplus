@@ -17,6 +17,10 @@ import VehicleOperationPhotoDto from "src/dto/vehicle/vehicle.operation.photo.dt
 import VehiclePhotoCreateDto from "src/dto/vehicle/vehicle.photo.create.dto";
 import VehiclePhotoUpdateDto from "src/dto/vehicle/vehicle.photo.update.dto";
 import VehiclePhotoDeleteDto from "src/dto/vehicle/vehicle.photo.delete.dto";
+import VehicleNoteCreateDto from "src/dto/vehicle/vehicle.note.create.dto";
+import VehicleNoteRequestDto from "src/dto/vehicle/vehicle.note.dto";
+import VehicleNoteUpdateDto from "src/dto/vehicle/vehicle.note.update.dto";
+import VehicleNoteDeleteDto from "src/dto/vehicle/vehicle.note.delete.dto";
 
 @Controller("vehicle")
 export default class VehicleController {
@@ -103,6 +107,34 @@ export default class VehicleController {
     @Validator(VehiclePhotoDeleteDto)
     public async operationPhotoDelete(@Body() reqDto: VehiclePhotoDeleteDto): Promise<Result<BaseResponseDto[]>> {
         const result = await this.vehicleService.operationPhotoDelete(reqDto);
+        return result;
+    }
+
+    @Post("noteCreate")
+    @Validator(VehicleNoteCreateDto)
+    public async noteCreate(@Body() reqDto: VehicleNoteCreateDto): Promise<Result<BaseResponseDto[]>> {
+        const result = await this.vehicleService.noteCreate(reqDto);
+        return result;
+    }
+
+    @Post("noteGet")
+    @Validator(VehicleNoteRequestDto)
+    public async noteGet(@Body() reqDto: VehicleNoteRequestDto): Promise<Result<BaseResponseDto[]>> {
+        const result = await this.vehicleService.noteGet(reqDto);
+        return result;
+    }
+
+    @Post("noteUpdate")
+    @Validator(VehicleNoteUpdateDto)
+    public async noteUpdate(@Body() reqDto: VehicleNoteUpdateDto): Promise<Result<BaseResponseDto[]>> {
+        const result = await this.vehicleService.noteUpdate(reqDto);
+        return result;
+    }
+
+    @Post("noteDelete")
+    @Validator(VehicleNoteDeleteDto)
+    public async noteDelete(@Body() reqDto: VehicleNoteDeleteDto): Promise<Result<BaseResponseDto[]>> {
+        const result = await this.vehicleService.noteDelete(reqDto);
         return result;
     }
 }
