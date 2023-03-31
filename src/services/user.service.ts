@@ -20,7 +20,7 @@ export default class UserService extends BaseService {
             return new ErrorResult(ErrorCodes.PHONE_NUMBER_EXISTS);
         }
 
-        const encrytedPassword = await this.encrypt(password, process.env.USER_PASSWORD_KEY);
+        const encrytedPassword = await this.encrypt(JSON.stringify(password), process.env.USER_PASSWORD_KEY);
 
         await this.insertUser(name, surname, email, mobilePhone, encrytedPassword);
 
@@ -36,6 +36,10 @@ export default class UserService extends BaseService {
             return new ErrorResult(ErrorCodes.INVALID_USER);
         }
 
+        const decrytedPassword = await this.decrypt(user.rows[0].password, process.env.USER_PASSWORD_KEY);
+
+        user.rows[0]["userPassword"] = decrytedPassword
+
         return new SuccessResult(user.rows);
     }
 
@@ -48,7 +52,7 @@ export default class UserService extends BaseService {
             return new ErrorResult(ErrorCodes.INVALID_USER);
         }
 
-        const encrytedPassword = await this.encrypt(password, process.env.USER_PASSWORD_KEY);
+        const encrytedPassword = await this.encrypt(JSON.stringify(password), process.env.USER_PASSWORD_KEY);
 
         await this.updateUser(userId, name, surname, email, mobilePhone, isEnabled , encrytedPassword);
 
@@ -73,7 +77,7 @@ export default class UserService extends BaseService {
 
     async selectUser(mobilePhone: string, userId?: number) {
         const result = await this.dbService.query(`select id,name,surname,email,mobile_phone as "mobilePhone",
-            mobile_phone_country_code as "mobilePhoneCountryCode", is_enabled as "isEnabled",
+            mobile_phone_country_code as "mobilePhoneCountryCode", is_enabled as "isEnabled", password, 
             role from users where (mobile_phone = $1) or ((id = $2) or ($2 = -1))`, [mobilePhone || null, userId || null]);
 
         return result;
