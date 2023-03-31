@@ -34,9 +34,9 @@ export default class VehicleService extends BaseService {
     }
 
     public async get(reqDto: VehicleRequestDto): Promise<Result<VehicleResponseDto[]>> {
-        const { userId } = reqDto;
+        const { userId, vehicleId } = reqDto;
 
-        const vehicleResult = await this.selectVehicle(userId);
+        const vehicleResult = await this.selectVehicle(userId, vehicleId);
 
         return new SuccessResult(vehicleResult.rows);
     }
@@ -337,8 +337,10 @@ export default class VehicleService extends BaseService {
     }
 
     async selectVehicle(userId: number, vehicleId?: number) {
-        const query = `select id, brand, model, step_status as "stepStatus", user_id as "userId",
-                                number_plate as "numberPlate" from vehicles where ((user_id = $1) or ($1 = -1)) or (id = $2)`;
+        const query = `select vehicles.id as "vehicleId", brand, model, step_status as "stepStatus", user_id as "userId",
+        number_plate as "numberPlate", users."name" || ' ' || users.surname as "userName" 
+        from vehicles inner join users on user_id = users.id
+        where ((user_id = $1) or ($1 = -1)) or (vehicles.id = $2)`;
         return await this.dbService.query(query, [userId || null, vehicleId || null]);
     }
 
