@@ -67,7 +67,7 @@ export default class OperationService extends BaseService {
     }
 
     async selectOperation(id: number) {
-        const query = "select id,name from operations where ((id = $1) or ($1 = -1)) order by id desc";
+        const query = "select id,name from operations where ((id = $1) or ($1 = -1)) order by id";
         return await this.dbService.query(query, [id || -1]);
     }
 

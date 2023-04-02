@@ -28,9 +28,9 @@ export default class VehicleService extends BaseService {
     public async create(reqDto: VehicleCreateDto): Promise<Result<BaseResponseDto[]>> {
         const { userId, brand, model, numberPlate } = reqDto;
 
-        await this.insertVehicle(userId, brand, model, numberPlate);
+        const result = await this.insertVehicle(userId, brand, model, numberPlate);
 
-        return new SuccessResult();
+        return new SuccessResult(result.rows);
     }
 
     public async get(reqDto: VehicleRequestDto): Promise<Result<VehicleResponseDto[]>> {
@@ -70,7 +70,7 @@ export default class VehicleService extends BaseService {
     }
 
     public async operationCreate(reqDto: VehicleCreateOperationDto): Promise<Result<BaseResponseDto[]>> {
-        const { vehicleId, operationId } = reqDto;
+        const { vehicleId, operationList } = reqDto;
 
         const vehicleResult = await this.selectVehicle(null, vehicleId);
 
@@ -78,19 +78,19 @@ export default class VehicleService extends BaseService {
             return new ErrorResult(ErrorCodes.VEHICLE_NOT_FOUND);
         }
 
-        const operationResult = await this.selectOperation(operationId);
+        const operationResult = await this.selectOperation(operationList);
 
         if (!operationResult.rowCount) {
             return new ErrorResult(ErrorCodes.OPERATION_NOT_FOUND);
         }
 
-        const vehicleOperationResult = await this.vehicleOperationControl(vehicleId, operationId);
+        const vehicleOperationResult = await this.vehicleOperationControl(vehicleId, operationList);
 
         if (vehicleOperationResult.rowCount) {
             return new ErrorResult(ErrorCodes.OPERATION_AVAIBLE);
         }
 
-        await this.insertVehicleOperation(vehicleId, operationId);
+        await this.insertVehicleOperation(vehicleId, operationList);
 
         return new SuccessResult();
     }
@@ -332,7 +332,7 @@ export default class VehicleService extends BaseService {
     // #region Private methods
 
     async insertVehicle(userId: number, brand: string, model: string, numberPlate: string) {
-        const query = `insert into public.vehicles(brand, model, user_id, number_plate) values ($1, $2, $3, $4)`;
+        const query = `insert into public.vehicles(brand, model, user_id, number_plate) values ($1, $2, $3, $4) returning*`;
         return await this.dbService.query(query, [brand, model, userId, numberPlate.toUpperCase().replace(/\s/g, '')]);
     }
 
@@ -354,19 +354,20 @@ export default class VehicleService extends BaseService {
         await this.dbService.query(query, [vehicleId]);
     }
 
-    async selectOperation(operationId: number) {
-        const query = `select * from operations where id=$1`;
-        return await this.dbService.query(query, [operationId]);
+    async selectOperation(operationId: any) {
+        const query = `select * from operations where id IN(${operationId})`;
+        return await this.dbService.query(query);
     }
 
-    async vehicleOperationControl(vehicleId: number, operationId: number) {
-        const query = `select * from vehicle_operation where vehicle_id=$1 and operation_id=$2`;
-        return await this.dbService.query(query, [vehicleId, operationId]);
+    async vehicleOperationControl(vehicleId: number, operationId: any) {
+        const query = `select * from vehicle_operation where vehicle_id=$1 and operation_id IN(${operationId})`;
+        return await this.dbService.query(query, [vehicleId]);
     }
 
-    async insertVehicleOperation(vehicleId: number, operationId: number) {
-        const query = `insert into public.vehicle_operation(vehicle_id, operation_id) values ($1, $2);`;
-        return await this.dbService.query(query, [vehicleId, operationId]);
+    async insertVehicleOperation(vehicleId: number, operationList?: number[]) {
+        const values = operationList.map((operation: number) => `(${vehicleId}, '${operation}')`);
+        const query = `insert into public.vehicle_operation(vehicle_id, operation_id) values ${values.join(",")}`;
+        return await this.dbService.query(query);
     }
 
     async selectVehicleOperation(vehicleId: number, operationId?: number, operationStatus?: number) {
