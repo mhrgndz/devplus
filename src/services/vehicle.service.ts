@@ -364,7 +364,7 @@ export default class VehicleService extends BaseService {
         return await this.dbService.query(query, [vehicleId]);
     }
 
-    async insertVehicleOperation(vehicleId: number, operationList?: number[]) {
+    async insertVehicleOperation(vehicleId: number, operationList: number[]) {
         const values = operationList.map((operation: number) => `(${vehicleId}, '${operation}')`);
         const query = `insert into public.vehicle_operation(vehicle_id, operation_id) values ${values.join(",")}`;
         return await this.dbService.query(query);
