@@ -130,7 +130,7 @@ export default class VehicleService extends BaseService {
     }
 
     public async operationDelete(reqDto: VehicleDeleteOperationDto): Promise<Result<BaseResponseDto[]>> {
-        const { vehicleId, operationId } = reqDto;
+        const { vehicleId, operationList } = reqDto;
 
         const vehicleResult = await this.selectVehicle(null, vehicleId);
 
@@ -138,13 +138,7 @@ export default class VehicleService extends BaseService {
             return new ErrorResult(ErrorCodes.VEHICLE_NOT_FOUND);
         }
 
-        const vehicleOperationResult = await this.vehicleOperationControl(vehicleId, operationId);
-
-        if (!vehicleOperationResult.rowCount) {
-            return new ErrorResult(ErrorCodes.OPERATION_NOT_FOUND);
-        }
-
-        await this.deleteVehicleOperation(vehicleOperationResult.rows[0].id);
+        await this.deleteVehicleOperation(vehicleId);
 
         return new SuccessResult();
     }
@@ -296,7 +290,7 @@ export default class VehicleService extends BaseService {
     }
 
     public async noteGet(reqDto: VehicleNoteRequestDto): Promise<Result<BaseResponseDto[]>> {
-        const { vehicleId } = reqDto;
+        const { vehicleId, type } = reqDto;
 
         const vehicleResult = await this.selectVehicle(null, vehicleId);
 
@@ -304,7 +298,7 @@ export default class VehicleService extends BaseService {
             return new ErrorResult(ErrorCodes.VEHICLE_NOT_FOUND);
         }
 
-        const noteResult = await this.selectVehicleNote(vehicleId);
+        const noteResult = await this.selectVehicleNote(vehicleId, -1, type);
 
         return new SuccessResult(noteResult.rows);
     }
@@ -343,7 +337,7 @@ export default class VehicleService extends BaseService {
         where ((user_id = $1) or ($1 = -1)) or (vehicles.id = $2)`;
         return await this.dbService.query(query, [userId || null, vehicleId || null]);
     }
-
+    
     async updateVehicle(vehicleId: number, brand: string, model: string, numberPlate: string) {
         const query = `update public.vehicles set brand=$2, model=$3, number_plate=$4, updated_date=now() where id=$1`;
         return await this.dbService.query(query, [vehicleId, brand, model, numberPlate.toUpperCase().replace(/\s/g, '')]);
@@ -382,10 +376,9 @@ export default class VehicleService extends BaseService {
         return await this.dbService.query(query, [status, vehicleOperationId]);
     }
 
-    async deleteVehicleOperation(id: number) {
-
-        const query = `delete from public.vehicle_operation where id=$1`;
-        await this.dbService.query(query, [id]);
+    async deleteVehicleOperation(vehicleId: any) {
+        const query = `delete from public.vehicle_operation where vehicle_id=$1`;
+        await this.dbService.query(query, [vehicleId]);
     }
 
     async selectOperationPhoto(vehicleId: number, id: number, operationId: number) {
@@ -413,9 +406,11 @@ export default class VehicleService extends BaseService {
         return await this.dbService.query(query, [note, vehicleId, userId, type]);
     }
 
-    async selectVehicleNote(vehicleId: number, noteId?: number) {
-        const query = `select id,vehicle_id as "vehicleId", type, user_id as "userId",note from vehicle_notes where vehicle_id=$1 and ((id = $2) or ($2 = -1))`;
-        return await this.dbService.query(query, [vehicleId, noteId || -1]);
+    async selectVehicleNote(vehicleId: number, noteId?: number, type?:number) {
+        const query = `select v1.id,v1.vehicle_id as "vehicleId", v1.type, v1.user_id as "userId" ,
+        (select string_agg(note, ' | ') AS notes from vehicle_notes vn2 where vn2.vehicle_id = v1.vehicle_id and ((type = $3) or ($3 = -1))) as note
+        from vehicle_notes v1 where vehicle_id=$1 and ((id = $2) or ($2 = -1)) limit 1`;
+        return await this.dbService.query(query, [vehicleId, noteId || -1, type]);
     }
 
     async updateNote(id: number, note: string) {
