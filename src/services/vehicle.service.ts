@@ -132,7 +132,7 @@ export default class VehicleService extends BaseService {
     public async operationDelete(reqDto: VehicleDeleteOperationDto): Promise<Result<BaseResponseDto[]>> {
         const { vehicleId, operationList } = reqDto;
 
-        const vehicleResult = await this.selectVehicle(null, vehicleId);
+        const vehicleResult = await this.selectVehicle(-1, vehicleId);
 
         if (!vehicleResult.rowCount) {
             return new ErrorResult(ErrorCodes.VEHICLE_NOT_FOUND);
