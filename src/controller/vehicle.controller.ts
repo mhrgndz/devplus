@@ -21,6 +21,7 @@ import VehicleNoteCreateDto from "src/dto/vehicle/vehicle.note.create.dto";
 import VehicleNoteRequestDto from "src/dto/vehicle/vehicle.note.dto";
 import VehicleNoteUpdateDto from "src/dto/vehicle/vehicle.note.update.dto";
 import VehicleNoteDeleteDto from "src/dto/vehicle/vehicle.note.delete.dto";
+import MyVehicleRequestDto from "src/dto/vehicle/my.vehicle.request.dto";
 
 @Controller("vehicle")
 export default class VehicleController {
@@ -135,6 +136,13 @@ export default class VehicleController {
     @Validator(VehicleNoteDeleteDto)
     public async noteDelete(@Body() reqDto: VehicleNoteDeleteDto): Promise<Result<BaseResponseDto[]>> {
         const result = await this.vehicleService.noteDelete(reqDto);
+        return result;
+    }
+
+    @Post("myVehicle")
+    @Validator(MyVehicleRequestDto)
+    public async myVehicle(@Body() reqDto: MyVehicleRequestDto): Promise<Result<BaseResponseDto[]>> {
+        const result = await this.vehicleService.myVehicle(reqDto);
         return result;
     }
 }

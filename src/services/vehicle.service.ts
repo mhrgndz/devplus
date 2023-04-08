@@ -22,6 +22,7 @@ import VehicleNoteCreateDto from "src/dto/vehicle/vehicle.note.create.dto";
 import VehicleNoteUpdateDto from "src/dto/vehicle/vehicle.note.update.dto";
 import VehicleNoteRequestDto from "src/dto/vehicle/vehicle.note.dto";
 import VehicleNoteDeleteDto from "src/dto/vehicle/vehicle.note.delete.dto";
+import MyVehicleRequestDto from "src/dto/vehicle/my.vehicle.request.dto";
 
 @Injectable()
 export default class VehicleService extends BaseService {
@@ -323,6 +324,14 @@ export default class VehicleService extends BaseService {
         return new SuccessResult();
     }
 
+    public async myVehicle(reqDto: MyVehicleRequestDto): Promise<Result<BaseResponseDto[]>> {
+        const { userId } = reqDto;
+
+        const vehicleResult = await this.selectMyVehicleOperation(userId);
+
+        return new SuccessResult(vehicleResult.rows);
+    }
+
     // #region Private methods
 
     async insertVehicle(userId: number, brand: string, model: string, numberPlate: string) {
@@ -421,6 +430,16 @@ export default class VehicleService extends BaseService {
     async deleteNote(id: number) {
         const query = `delete from public.vehicle_notes where id=$1`;
         await this.dbService.query(query, [id]);
+    }
+
+    async selectMyVehicleOperation(userId: number) {
+        const query = `select vo.id,vehicle_id as "vehicleId", operation_id as "operationId",status, 
+        name as "operationName",v.brand, v.model, v.number_plate as "numberPlate", v.user_id as "userId"
+        from vehicle_operation vo
+        inner join operations o on vo.operation_id = o.id  
+        inner join vehicles v on v.id = vo.vehicle_id  
+        where v.user_id = $1 order by vo.status desc`;
+        return await this.dbService.query(query, [userId]);
     }
 
     // #endregion Private methods
