@@ -332,7 +332,9 @@ export default class VehicleService extends BaseService {
 
     async selectVehicle(userId: number, vehicleId?: number) {
         const query = `select vehicles.id as "vehicleId", brand, model, step_status as "stepStatus", user_id as "userId",
-        number_plate as "numberPlate", users."name" || ' ' || users.surname as "userName" 
+        number_plate as "numberPlate", users."name" || ' ' || users.surname as "userName",
+        case when exists (select 1 from vehicle_operation vo where vo.vehicle_id = vehicles.id and vo.status <> 2) 
+        then false else true end as "complateStatus"
         from vehicles inner join users on user_id = users.id
         where ((user_id = $1) or ($1 = -1)) or (vehicles.id = $2)`;
         return await this.dbService.query(query, [userId || null, vehicleId || null]);
