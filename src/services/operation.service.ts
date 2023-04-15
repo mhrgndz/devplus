@@ -12,9 +12,9 @@ import OperationDeleteDto from "src/dto/operation/operation.delete.dto";
 @Injectable()
 export default class OperationService extends BaseService {
     public async create(reqDto: OperationCreateDto): Promise<Result<BaseResponseDto[]>> {
-        const { name } = reqDto;
+        const { name, price } = reqDto;
 
-        await this.insertOperation(name);
+        await this.insertOperation(name, price);
 
         return new SuccessResult();
     }
@@ -32,15 +32,15 @@ export default class OperationService extends BaseService {
     }
 
     public async update(reqDto: OperationUpdateDto): Promise<Result<BaseResponseDto[]>> {
-        const { id, name } = reqDto;    
+        const { id, name, price } = reqDto;    
 
         const resultOperation = await this.selectOperation(id);
 
         if (!resultOperation.rowCount) {
             return new ErrorResult(ErrorCodes.OPERATION_NOT_FOUND);
-        }
+        } 
 
-        await this.updateOperation(id, name);
+        await this.updateOperation(id, name, price);
 
         return new SuccessResult();
     }
@@ -61,19 +61,19 @@ export default class OperationService extends BaseService {
 
     // #region Private methods
 
-    async insertOperation(name: string) {
-        const query = `insert into public.operations(name) values ($1)`;
-        return await this.dbService.query(query, [name]);
+    async insertOperation(name: string, price: number) {
+        const query = `insert into public.operations(name, price) values ($1, $2)`;
+        return await this.dbService.query(query, [name, price]);
     }
 
     async selectOperation(id: number) {
-        const query = "select id,name from operations where ((id = $1) or ($1 = -1)) order by id";
+        const query = "select id,name,price from operations where ((id = $1) or ($1 = -1)) order by id";
         return await this.dbService.query(query, [id || -1]);
     }
 
-    async updateOperation(id: number, name: string) {
-        const query = `update operations set name=$2 where id=$1`;
-        return await this.dbService.query(query, [id, name]);
+    async updateOperation(id: number, name: string, price: number) {
+        const query = `update operations set name=$2, price=$3 where id=$1`;
+        return await this.dbService.query(query, [id, name, price]);
     }
 
     async deleteOperation(id: number) {

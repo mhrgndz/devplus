@@ -7,4 +7,7 @@ export default class OperationUpdateDto extends BaseRequestDto {
 
     @IsString()
     name: string;
+
+    @IsNumber()
+    price: number;
 }
