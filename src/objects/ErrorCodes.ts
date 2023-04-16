@@ -16,4 +16,5 @@ export default class ErrorCodes {
     static OPERATION_NOT_FOUND= "OPERATION_NOT_FOUND";
     static OPERATION_AVAIBLE= "OPERATION_AVAIBLE";
     static NOTE_NOT_FOUND= "NOTE_NOT_FOUND";
+    static OFFER_NOT_FOUND= "OFFER_NOT_FOUND";
 }
