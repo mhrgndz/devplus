@@ -89,7 +89,7 @@ export default class OfferService extends BaseService {
     }
 
     async selectOfferMaster(masterId: number) {
-        const result = await this.dbService.query(`select u.name, u.surname, u.email, om.amount from offers_master om
+        const result = await this.dbService.query(`select om.id, u.name, u.surname, u.email, om.amount from offers_master om
         join users u on u.id = om.user_id where ((om.id = $1) or ($1 = -1))`, [masterId]);
 
         return result.rowCount > 0 ? result.rows : false;
