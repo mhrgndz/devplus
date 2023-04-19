@@ -5,10 +5,11 @@ import { unlink } from 'node:fs/promises';
 import * as CryptoJS from "crypto-js";
 import { v4 as uuidv4 } from "uuid";
 import DbService from "./db.service";
+import MailService from "./mail.service";
 
 @Injectable()
 export default class BaseService {
-    constructor(@Inject(DbService) public readonly dbService: DbService) {}
+    constructor(@Inject(DbService) public readonly dbService: DbService, @Inject(MailService) public readonly mailService: MailService) {}
 
     async readFile(path) {
         try {
